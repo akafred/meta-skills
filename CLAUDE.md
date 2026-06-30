@@ -30,8 +30,10 @@ The aggregated skills only become active after they are symlinked into a repo's
 `.claude/skills/`. Discover and install them with:
 
 ```bash
-./install-skills.sh                          # interactive picker (into this meta-repo)
-./install-skills.sh --target ~/code/app all  # install into another repo
+make install-skills                          # interactive picker (into this meta-repo)
+make install-skills TARGET=~/code/app SKILLS=all
+# or the script directly for finer control:
+./install-skills.sh --target ~/code/app all
 ```
 
 This meta-repo's own `.claude/skills/` is **committed** (relative symlinks), so a
@@ -41,8 +43,8 @@ the full command set and `make help` for the menu.
 
 ## What lives where
 
-- `.meta` — the source of truth: folder → sub-repo git URL. Edit via
-  `meta project import <folder> <url>`, then commit `.meta` + `.gitignore`.
+- `.meta` — the source of truth: folder → sub-repo git URL. Add repos via
+  `make add FOLDER=<name> URL=<url>`, then commit `.meta` + `.gitignore`.
 - Sub-repo contents belong to *those* repos; commits there have their own
   remotes and PRs. This meta-repo only tracks its coordination files.
 - `docs/` — cross-repo documentation that no single sub-repo owns.

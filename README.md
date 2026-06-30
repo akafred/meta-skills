@@ -28,14 +28,14 @@ make bootstrap
 After pulling the meta-repo, materialize any newly-added sub-repos and pull each:
 
 ```bash
-meta git update          # clone any sub-repos added to .meta since last update
-make pull                # pull all repos (parallel, rebase, autostash)
+make update   # clone any sub-repos added to .meta since last update
+make pull     # pull all repos (parallel, rebase, autostash)
 ```
 
 ## Add another skill repo
 
 ```bash
-meta project import <folder> <git-url>
+make add FOLDER=<name> URL=<git-url>
 ```
 
 This clones the repo into `<folder>` and records it in both `.meta` and `.gitignore`. Then commit the updated `.meta` and `.gitignore` in this meta-repo.
@@ -52,8 +52,21 @@ This clones the repo into `<folder>` and records it in both `.meta` and `.gitign
 make install-skills SKILLS=meta-repo         # via make (this meta-repo)
 ```
 
-Sub-repos must be cloned first (`meta git clone` / `meta git update`). Links are **relative**, so they survive across clones and machines. This meta-repo's own `.claude/skills/` is committed — a fresh checkout already has the skills wired up; the links resolve once the sub-repos are materialized (`meta git update`), and dangle until then.
+Sub-repos must be cloned first (`make bootstrap` / `make update`). Links are **relative**, so they survive across clones and machines. This meta-repo's own `.claude/skills/` is committed — a fresh checkout already has the skills wired up; the links resolve once the sub-repos are materialized (`make update`), and dangle until then.
 
 ## Common operations
 
-Run `make help` for the command menu. See `docs/` for cross-repo documentation.
+`make help` lists everything; the central operations all have targets:
+
+| Command | Does |
+| --- | --- |
+| `make bootstrap` | Install `meta` if missing, clone all sub-repos |
+| `make update` | Clone sub-repos newly added to `.meta` |
+| `make add FOLDER=.. URL=..` | Add a sub-repo |
+| `make status` | Git status across all repos |
+| `make pull` | Pull all repos (parallel) |
+| `make stats` | Lines of code per repo (needs `cloc`) |
+| `make list` | List configured projects |
+| `make install-skills` | Symlink skills into a repo (see above) |
+
+The only operation not behind `make` is the very first clone — `meta git clone <url>` — since there is no checkout to run `make` from yet (or use plain `git clone` then `make bootstrap`). See `docs/` for cross-repo documentation.
