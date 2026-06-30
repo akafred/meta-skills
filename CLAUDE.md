@@ -44,10 +44,31 @@ fresh checkout already has the skills wired up — they resolve once the sub-rep
 are materialized (`meta git update`) and dangle until then. See `README.md` for
 the full command set and `make help` for the menu.
 
+## Adding a sub-repo
+
+A request like "Add obra/superpowers" maps directly to one command — you do not
+need to inspect `.meta` or the `Makefile` first:
+
+```bash
+make add FOLDER=<owner>-<repo> URL=https://github.com/<owner>/<repo>.git
+# "Add obra/superpowers" →
+make add FOLDER=obra-superpowers URL=https://github.com/obra/superpowers.git
+```
+
+Conventions (so there's nothing to decide):
+
+- **Folder name** is `<owner>-<repo>` — e.g. `mattpocock/skills` → `mattpocock-skills`.
+- **URL** is HTTPS for third-party/public repos. Use SSH
+  (`git@github.com:<owner>/<repo>.git`) only for repos you own and push to — that
+  is why `akafred-skills` uses SSH while the rest use HTTPS.
+
+`make add` clones the repo and updates `.meta` + `.gitignore`. Then commit those
+two files.
+
 ## What lives where
 
-- `.meta` — the source of truth: folder → sub-repo git URL. Add repos via
-  `make add FOLDER=<name> URL=<url>`, then commit `.meta` + `.gitignore`.
+- `.meta` — the source of truth: folder → sub-repo git URL. Add repos with
+  `make add` (see above), then commit `.meta` + `.gitignore`.
 - Sub-repo contents belong to *those* repos; commits there have their own
   remotes and PRs. This meta-repo only tracks its coordination files.
 - `docs/` — cross-repo documentation that no single sub-repo owns.

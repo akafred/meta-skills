@@ -35,10 +35,14 @@ make pull     # pull all repos (parallel, rebase, autostash)
 ## Add another skill repo
 
 ```bash
-make add FOLDER=<name> URL=<git-url>
+make add FOLDER=<owner>-<repo> URL=https://github.com/<owner>/<repo>.git
+# e.g. "add obra/superpowers":
+make add FOLDER=obra-superpowers URL=https://github.com/obra/superpowers.git
 ```
 
-This clones the repo into `<folder>` and records it in both `.meta` and `.gitignore`. Then commit the updated `.meta` and `.gitignore` in this meta-repo.
+Conventions: the folder is named `<owner>-<repo>` (e.g. `mattpocock/skills` → `mattpocock-skills`); use an HTTPS URL for third-party repos and SSH (`git@github.com:<owner>/<repo>.git`) only for repos you own and push to — which is why `akafred-skills` uses SSH and the others HTTPS.
+
+`make add` clones the repo into `<folder>` and records it in both `.meta` and `.gitignore`. Then commit the updated `.meta` and `.gitignore` in this meta-repo.
 
 ## Install skills
 
