@@ -6,6 +6,14 @@ help: ## Show this help
 	@grep -hE '^\S+:.*##' $(MAKEFILE_LIST) | sed -e 's/:.*##\s*/ : /' | \
 	while IFS=' : ' read -r cmd desc; do printf "\033[36m%-20s\033[0m %s\n" "$$cmd" "$$desc"; done
 
+bootstrap: ## Install prerequisites (meta) and clone all sub-repos
+	@command -v node >/dev/null 2>&1 || { echo "✗ node/npm required — install from https://nodejs.org"; exit 1; }
+	@command -v meta >/dev/null 2>&1 || { echo "→ installing meta CLI (npm install -g meta)..."; npm install -g meta; }
+	@command -v cloc >/dev/null 2>&1 || echo "ℹ cloc not found — 'make stats' needs it (e.g. brew install cloc)"
+	@echo "→ materializing sub-repos (meta git update)..."
+	@meta git update
+	@echo "✓ ready. Skills committed under .claude/skills now resolve; run './install-skills.sh' to add more."
+
 status: ## Git status across all repos
 	@meta git status
 

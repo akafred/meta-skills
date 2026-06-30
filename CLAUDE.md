@@ -15,13 +15,14 @@ the sub-repos are materialized separately.
 To get everything:
 
 ```bash
+make bootstrap                                          # installs meta if missing, then clones sub-repos
+# equivalently, if meta is already installed:
 meta git clone git@github.com:akafred/meta-skills.git   # meta-repo + all sub-repos
-# or, inside an already-cloned meta-repo:
-meta git update                                         # clone any missing sub-repos
+meta git update                                         # inside an existing clone: clone missing sub-repos
 ```
 
-Requires the `meta` CLI (`npm install -g meta`) and `node`. `cloc` is optional
-(used by `make stats`).
+`make bootstrap` is the safe first step after a plain `git clone`. It needs
+`node`/`npm`; `cloc` is optional (used by `make stats`).
 
 ## Using the skills
 

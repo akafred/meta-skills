@@ -11,10 +11,16 @@ A meta-repo that aggregates several independent skill repositories: it reference
 
 ## Clone everything
 
-Clone the meta-repo and all referenced skill repos in one step:
+Clone the meta-repo and all referenced skill repos in one step (requires `meta`):
 
 ```bash
 meta git clone <this-meta-repo-url>
+```
+
+If you did a plain `git clone` (no `meta` yet), bootstrap from inside the repo — it installs `meta` if missing and materializes the sub-repos:
+
+```bash
+make bootstrap
 ```
 
 ## Update everything
