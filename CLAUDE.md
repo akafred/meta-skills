@@ -16,6 +16,10 @@ command, don't reverse-engineer from `.meta`, and don't hand-roll `meta`/`git`
 invocations; the target is the interface. A request like "add obra/superpowers" is
 just `make add` with the conventions below.
 
+Each target reports its own result — read that output and report it. Don't
+re-verify with `ls` or a second command, and don't pre-check before a target that
+would fail clearly on its own.
+
 ## What a plain `git clone` gives you (and the trap)
 
 `git clone` fetches only `.meta`, `.gitignore`, `README.md`, `Makefile`,
@@ -50,10 +54,12 @@ make install-skills TARGET=~/code/app SKILLS=all
 bin/install-skills.sh --target ~/code/app all
 ```
 
-This meta-repo's own `.claude/skills/` is **committed** (relative symlinks), so a
-fresh checkout already has the skills wired up — they resolve once the sub-repos
-are materialized (`meta git update`) and dangle until then. See `README.md` for
-the full command set and `make help` for the menu.
+A skill you install is **active immediately**: install only finds skills that live
+in an already-cloned sub-repo, so the new link resolves right away — don't tell the
+user it will activate later. The "dangles until materialized" caveat applies only
+to this meta-repo's own **committed** `.claude/skills/` links on a fresh checkout
+(before `meta git update`), never to a fresh install. See `README.md` for the full
+command set and `make help` for the menu.
 
 ## Conventions `make help` can't show
 
