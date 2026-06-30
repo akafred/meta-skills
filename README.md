@@ -68,6 +68,17 @@ Different agents discover skills from different per-repo folders. `.claude/skill
 
 Sub-repos must be cloned first (`make bootstrap` / `make update`). Links are **relative**, so they survive across clones and machines. This meta-repo's own `.claude/skills/` is committed (with `.agents/skills` symlinked to it) — a fresh checkout already has the skills wired up for every agent; the links resolve once the sub-repos are materialized (`make update`), and dangle until then.
 
+### Uninstalling
+
+Pass `--uninstall` (or `-u`) to remove the selected skills' links from the target repo. It only removes symlinks that point back into this meta-repo (your own files and foreign symlinks are left untouched), then cleans up: emptied skill dirs are removed and any now-dangling folder-level symlinks (e.g. `.agents/skills → .claude/skills`) are dropped.
+
+```bash
+bin/install-skills.sh --uninstall code-review   # remove one skill, from this meta-repo
+bin/install-skills.sh -u -t ~/code/app all      # remove everything, from another repo
+make uninstall-skills SKILLS=meta-repo           # via make
+make uninstall-skills TARGET=~/code/app SKILLS=all
+```
+
 ## Common operations
 
 `make help` lists everything; the central operations all have targets:
@@ -84,5 +95,6 @@ Sub-repos must be cloned first (`make bootstrap` / `make update`). Links are **r
 | `make list-repos` | List configured sub-repos (folder → url) |
 | `make search QUERY=..` | Search skills by name/description/body |
 | `make install-skills` | Symlink skills into a repo (see above) |
+| `make uninstall-skills` | Remove skill links from a repo (see above) |
 
 The only operation not behind `make` is the very first clone — `meta git clone <url>` — since there is no checkout to run `make` from yet (or use plain `git clone` then `make bootstrap`). See `docs/` for cross-repo documentation.

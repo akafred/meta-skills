@@ -45,3 +45,6 @@ search: ## Search skills by name/description/body: make search QUERY=<text>
 
 install-skills: ## Install skills (interactive; SKILLS="name..." TARGET=/path/to/repo)
 	@bin/install-skills.sh $(if $(TARGET),--target $(TARGET)) $(SKILLS)
+
+uninstall-skills: ## Uninstall skills (interactive; SKILLS="name..."|all TARGET=/path/to/repo)
+	@bin/install-skills.sh --uninstall $(if $(TARGET),--target $(TARGET)) $(SKILLS)

@@ -11,11 +11,13 @@ set -euo pipefail
 # (.agents/skills when none exist) with .claude/.agents folder-symlinked to it.
 #
 # Usage:
-#   ./install-skills.sh [--target DIR] [SKILL...]
+#   ./install-skills.sh [--target DIR] [--uninstall] [SKILL...]
 #
 #   --target DIR, -t DIR   Repo to install skills into (default: this meta-repo).
 #                          This is the main use: point it at the repo you want
 #                          a skill installed into.
+#   --uninstall, -u        Remove the selected skills' links from the target
+#                          (and clean up emptied skill dirs / stale dir links).
 #   SKILL...               Skill name(s) to install, or 'all'. Omit for an
 #                          interactive picker.
 #
@@ -24,6 +26,8 @@ set -euo pipefail
 #   ./install-skills.sh meta-repo                    # named, into this meta-repo
 #   ./install-skills.sh --target ~/code/app all      # everything, into ~/code/app
 #   ./install-skills.sh -t ~/code/app code-review    # one skill, into ~/code/app
+#   ./install-skills.sh -u -t ~/code/app code-review # uninstall one skill
+#   ./install-skills.sh --uninstall all              # uninstall all, from this meta-repo
 #
 # Source of truth is .meta; sub-repos must already be cloned
 # (e.g. via `meta git clone` / `meta git update`).
@@ -33,6 +37,7 @@ meta_file="$repo_root/.meta"
 project_dir="$repo_root"
 
 # Parse options; collect non-option args as the skill selection.
+mode="install"
 selection_args=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -41,8 +46,12 @@ while [[ $# -gt 0 ]]; do
       project_dir="$2"
       shift 2
       ;;
+    -u|--uninstall)
+      mode="uninstall"
+      shift
+      ;;
     -h|--help)
-      sed -n '3,29p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '3,33p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *)
@@ -171,7 +180,11 @@ if [[ ${#selection_args[@]} -gt 0 ]]; then
   fi
 else
   echo "Source:  $repo_root (across sub-repos)"
-  echo "Target:  ${target_dirs[*]}"
+  if [[ "$mode" == "uninstall" ]]; then
+    echo "Action:  uninstall from $project_dir"
+  else
+    echo "Target:  ${target_dirs[*]}"
+  fi
   echo
   echo "Available skills:"
   for i in "${!labels[@]}"; do
@@ -205,6 +218,59 @@ fi
 
 if [[ ${#chosen_idx[@]} -eq 0 ]]; then
   echo "No skills selected."
+  exit 0
+fi
+
+if [[ "$mode" == "uninstall" ]]; then
+  # Resolve a symlink's target to an absolute path without requiring the target
+  # to exist (pure path math), so we can still recognize our own dangling links.
+  resolve_link_abs() {
+    node -e 'const fs=require("fs"),path=require("path");const p=process.argv[1];console.log(path.resolve(path.dirname(p),fs.readlinkSync(p)))' "$1"
+  }
+
+  removed_any=0
+  for index in "${chosen_idx[@]}"; do
+    name="${names[$index]}"
+    found=0
+    for d in "${detect_dirs[@]}"; do
+      dir_path="$project_dir/$d"
+      # Only descend into real skill dirs; folder-level symlinks are handled in cleanup.
+      [[ -d "$dir_path" && ! -L "$dir_path" ]] || continue
+      link_path="$dir_path/$name"
+      [[ -L "$link_path" ]] || continue
+      # Safety: only remove links that point back into this meta-repo's sub-repos.
+      if [[ "$(resolve_link_abs "$link_path")" == "$repo_root"/* ]]; then
+        rm "$link_path"
+        echo "Removed: $name ($dir_path)"
+        found=1
+        removed_any=1
+      fi
+    done
+    [[ "$found" -eq 0 ]] && echo "Not installed: $name"
+  done
+
+  # Cleanup, in order: drop now-empty real skill dirs (and empty parents), then
+  # remove folder-level symlinks whose canonical target is gone or empty.
+  is_empty_dir() { [[ -z "$(ls -A "$1" 2>/dev/null)" ]]; }
+  for d in "${detect_dirs[@]}"; do
+    dir_path="$project_dir/$d"
+    if [[ -d "$dir_path" && ! -L "$dir_path" ]] && is_empty_dir "$dir_path"; then
+      rmdir "$dir_path" && echo "Removed empty dir: $d"
+      rmdir "$(dirname "$dir_path")" 2>/dev/null || true
+    fi
+  done
+  for d in "${detect_dirs[@]}"; do
+    dir_path="$project_dir/$d"
+    if [[ -L "$dir_path" ]]; then
+      target_abs="$(resolve_link_abs "$dir_path")"
+      if [[ ! -d "$target_abs" ]] || is_empty_dir "$target_abs"; then
+        rm "$dir_path" && echo "Removed dangling dir link: $d"
+        rmdir "$(dirname "$dir_path")" 2>/dev/null || true
+      fi
+    fi
+  done
+
+  [[ "$removed_any" -eq 0 ]] && echo "Nothing to uninstall."
   exit 0
 fi
 
