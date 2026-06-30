@@ -26,6 +26,9 @@ meta git update                                         # inside an existing clo
 
 ## Using the skills
 
+Explore what's available with `make list` (list all skills) and
+`make search QUERY=<text>` (search name/description/body across sub-repos).
+
 The aggregated skills only become active after they are symlinked into a repo's
 `.claude/skills/`. Discover and install them with:
 

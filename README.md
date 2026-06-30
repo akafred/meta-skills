@@ -42,6 +42,8 @@ This clones the repo into `<folder>` and records it in both `.meta` and `.gitign
 
 ## Install skills
 
+First explore what's available — `make list` lists every skill (name, repo, description) and `make search QUERY=<text>` searches names, descriptions, and bodies across all sub-repos.
+
 `install-skills.sh` discovers every `SKILL.md` across all sub-repos (read from `.meta`) and symlinks the ones you pick into a target repo's `.claude/skills/`. Point it at the repo you want the skill installed into with `--target`; with no target it installs into this meta-repo itself.
 
 ```bash
@@ -66,7 +68,9 @@ Sub-repos must be cloned first (`make bootstrap` / `make update`). Links are **r
 | `make status` | Git status across all repos |
 | `make pull` | Pull all repos (parallel) |
 | `make stats` | Lines of code per repo (needs `cloc`) |
-| `make list` | List configured projects |
+| `make list` | List all skills across sub-repos (name, repo, description) |
+| `make list-repos` | List configured sub-repos (folder → url) |
+| `make search QUERY=..` | Search skills by name/description/body |
 | `make install-skills` | Symlink skills into a repo (see above) |
 
 The only operation not behind `make` is the very first clone — `meta git clone <url>` — since there is no checkout to run `make` from yet (or use plain `git clone` then `make bootstrap`). See `docs/` for cross-repo documentation.
