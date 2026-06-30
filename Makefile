@@ -12,7 +12,7 @@ bootstrap: ## Install prerequisites (meta) and clone all sub-repos
 	@command -v cloc >/dev/null 2>&1 || echo "ℹ cloc not found — 'make stats' needs it (e.g. brew install cloc)"
 	@echo "→ materializing sub-repos (meta git update)..."
 	@meta git update
-	@echo "✓ ready. Skills committed under .claude/skills now resolve; run './install-skills.sh' to add more."
+	@echo "✓ ready. Skills committed under .claude/skills now resolve; run 'make install-skills' to add more."
 
 update: ## Clone sub-repos newly added to .meta
 	@meta git update
