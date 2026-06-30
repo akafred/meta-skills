@@ -6,6 +6,7 @@ set -euo pipefail
 # Usage:
 #   ./skills.sh list             # grouped by repo and category: name — description
 #   ./skills.sh search QUERY      # search name/description/body of each SKILL.md
+#   ./skills.sh show NAME         # pretty-print a skill's SKILL.md
 #
 # Source of truth is .meta; sub-repos must already be cloned (make bootstrap).
 
@@ -75,6 +76,20 @@ truncate() {
   if (( ${#t} > w )); then printf '%s…' "${t:0:w-1}"; else printf '%s' "$t"; fi
 }
 
+# Render a markdown file with the best available tool.
+render_md() {
+  local f="$1"
+  if command -v glow >/dev/null 2>&1; then
+    glow -w "$cols" "$f"
+  elif command -v bat >/dev/null 2>&1; then
+    bat --style=plain --paging=never --language=markdown "$f"
+  elif command -v mdcat >/dev/null 2>&1; then
+    mdcat "$f"
+  else
+    cat "$f"
+  fi
+}
+
 case "$cmd" in
   list)
     cur_repo=""; cur_cat='//unset//'
@@ -113,8 +128,27 @@ case "$cmd" in
     done
     [[ $hits -gt 0 ]] || { echo "No skills match: $query"; exit 1; }
     ;;
+  show)
+    [[ -n "$query" ]] || { echo "Usage: ./skills.sh show <skill-name>" >&2; exit 1; }
+    matches=()
+    for f in "${skill_files[@]}"; do
+      [[ "$(name_of "$f")" == "$query" || "$(basename "$(dirname "$f")")" == "$query" ]] && matches+=("$f")
+    done
+    if [[ ${#matches[@]} -eq 0 ]]; then
+      echo "No skill named '$query'. Try: ./skills.sh list" >&2
+      exit 1
+    fi
+    f="${matches[0]}"
+    if [[ ${#matches[@]} -gt 1 ]]; then
+      echo "Note: '$query' exists in multiple repos; showing $(repo_of "$f"). Others:" >&2
+      for m in "${matches[@]:1}"; do echo "  - $(repo_of "$m")/$(category_of "$m")" >&2; done
+    fi
+    cat="$(category_of "$f")"; loc="$(repo_of "$f")"; [[ -n "$cat" ]] && loc="$loc/$cat"
+    printf '\033[1m%s\033[0m  \033[2m(%s)\033[0m\n\033[2m%s\033[0m\n\n' "$(name_of "$f")" "$loc" "${f#"$repo_root"/}"
+    render_md "$f"
+    ;;
   *)
-    echo "Unknown command: $cmd (use 'list' or 'search QUERY')" >&2
+    echo "Unknown command: $cmd (use 'list', 'search QUERY', or 'show NAME')" >&2
     exit 1
     ;;
 esac

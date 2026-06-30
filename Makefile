@@ -43,6 +43,10 @@ search: ## Search skills by name/description/body: make search QUERY=<text>
 	@test -n "$(QUERY)" || { echo "Usage: make search QUERY=<text>"; exit 1; }
 	@bin/skills.sh search "$(QUERY)"
 
+show: ## Pretty-print a skill's SKILL.md: make show SKILL=<name>
+	@test -n "$(SKILL)" || { echo "Usage: make show SKILL=<name>"; exit 1; }
+	@bin/skills.sh show "$(SKILL)"
+
 list-installed: ## List skills installed in a repo (TARGET=/path/to/repo; default this repo)
 	@bin/install-skills.sh --list $(if $(TARGET),--target $(TARGET))
 

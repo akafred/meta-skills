@@ -8,9 +8,9 @@ is the authoritative guide to the pattern.
 ## Use `make` as the entry point
 
 Every operation on this repo is a `make` target. Run `make help` first and use the
-matching target — adding a repo, updating, listing or searching available skills,
-listing what's installed in a repo, installing or uninstalling them, status, stats
-all map to one. The `## ` text on each target
+matching target — adding a repo, updating, listing/searching/showing available
+skills, listing what's installed in a repo, installing or uninstalling them,
+status, stats all map to one. The `## ` text on each target
 is its full usage (parameters included), so don't open the `Makefile` to confirm a
 command, don't reverse-engineer from `.meta`, and don't hand-roll `meta`/`git`
 invocations; the target is the interface. A request like "add obra/superpowers" is

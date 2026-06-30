@@ -46,7 +46,7 @@ Conventions: the folder is named `<owner>-<repo>` (e.g. `mattpocock/skills` → 
 
 ## Install skills
 
-First explore what's available — `make list` lists every skill (name, repo, description) and `make search QUERY=<text>` searches names, descriptions, and bodies across all sub-repos.
+First explore what's available — `make list` lists every skill (name, repo, description), `make search QUERY=<text>` searches names, descriptions, and bodies across all sub-repos, and `make show SKILL=<name>` pretty-prints a skill's `SKILL.md` (rendered with `glow`/`bat`/`mdcat` if installed, else plain).
 
 `bin/install-skills.sh` discovers every `SKILL.md` across all sub-repos (read from `.meta`) and symlinks the ones you pick into a target repo, choosing skill folders for **cross-tool compatibility** (Claude Code, Copilot CLI, OpenCode, Codex). Point it at the repo you want the skill installed into with `--target`; with no target it installs into this meta-repo itself.
 
@@ -98,6 +98,7 @@ make uninstall-skills TARGET=~/code/app SKILLS=all
 | `make list` | List all skills across sub-repos (name, repo, description) |
 | `make list-repos` | List configured sub-repos (folder → url) |
 | `make search QUERY=..` | Search skills by name/description/body |
+| `make show SKILL=..` | Pretty-print a skill's `SKILL.md` |
 | `make install-skills` | Symlink skills into a repo (see above) |
 | `make list-installed` | List skills installed in a repo, and where each link points |
 | `make uninstall-skills` | Remove skill links from a repo (see above) |
