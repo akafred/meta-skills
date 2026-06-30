@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "akafred-skills": "git@github.com:akafred/skills.git",
+    "mattpocock-skills": "https://github.com/mattpocock/skills.git"
+  }
+}
