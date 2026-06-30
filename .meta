@@ -2,6 +2,7 @@
   "projects": {
     "akafred-skills": "git@github.com:akafred/skills.git",
     "mattpocock-skills": "https://github.com/mattpocock/skills.git",
-    "obra-superpowers": "https://github.com/obra/superpowers.git"
+    "obra-superpowers": "https://github.com/obra/superpowers.git",
+    "akafred-prezzie": "git@github.com:akafred/prezzie.git"
   }
 }
