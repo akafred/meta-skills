@@ -17,7 +17,7 @@ bootstrap: ## Install prerequisites (meta) and clone all sub-repos
 update: ## Clone sub-repos newly added to .meta
 	@meta git update
 
-add: ## Add a sub-repo: make add FOLDER=<name> URL=<git-url>
+add: ## Add a sub-repo: FOLDER=<owner>-<repo> URL=https://github.com/<owner>/<repo>.git
 	@test -n "$(FOLDER)" && test -n "$(URL)" || { echo "Usage: make add FOLDER=<name> URL=<git-url>"; exit 1; }
 	@meta project import $(FOLDER) $(URL)
 	@echo "✓ added '$(FOLDER)'. Commit the updated .meta and .gitignore."

@@ -5,6 +5,15 @@ This is a **meta-repo**, not a normal repo. It contains no skills of its own —
 The `meta-repo` skill (in `akafred-skills/skills/engineering/meta-repo/SKILL.md`)
 is the authoritative guide to the pattern.
 
+## Use `make` as the entry point
+
+Every operation on this repo is a `make` target. Run `make help` first and use the
+matching target — adding a repo, updating, listing or searching skills, installing
+them, status, stats all map to one. Don't reverse-engineer commands by reading
+`.meta`/`Makefile`, and don't hand-roll `meta`/`git` invocations; the target is the
+interface. A request like "add obra/superpowers" is just `make add` with the
+conventions below.
+
 ## What a plain `git clone` gives you (and the trap)
 
 `git clone` fetches only `.meta`, `.gitignore`, `README.md`, `Makefile`,
@@ -44,26 +53,13 @@ fresh checkout already has the skills wired up — they resolve once the sub-rep
 are materialized (`meta git update`) and dangle until then. See `README.md` for
 the full command set and `make help` for the menu.
 
-## Adding a sub-repo
+## Conventions `make help` can't show
 
-A request like "Add obra/superpowers" maps directly to one command — you do not
-need to inspect `.meta` or the `Makefile` first:
-
-```bash
-make add FOLDER=<owner>-<repo> URL=https://github.com/<owner>/<repo>.git
-# "Add obra/superpowers" →
-make add FOLDER=obra-superpowers URL=https://github.com/obra/superpowers.git
-```
-
-Conventions (so there's nothing to decide):
-
-- **Folder name** is `<owner>-<repo>` — e.g. `mattpocock/skills` → `mattpocock-skills`.
-- **URL** is HTTPS for third-party/public repos. Use SSH
-  (`git@github.com:<owner>/<repo>.git`) only for repos you own and push to — that
-  is why `akafred-skills` uses SSH while the rest use HTTPS.
-
-`make add` clones the repo and updates `.meta` + `.gitignore`. Then commit those
-two files.
+- **Adding a repo** (`make add`): name the folder `<owner>-<repo>` (e.g.
+  `mattpocock/skills` → `mattpocock-skills`), and use an HTTPS URL for third-party
+  repos — SSH (`git@github.com:<owner>/<repo>.git`) only for repos you own and
+  push to, which is why `akafred-skills` uses SSH and the rest HTTPS. Commit the
+  updated `.meta` + `.gitignore` afterward.
 
 ## What lives where
 
