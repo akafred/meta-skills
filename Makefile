@@ -43,6 +43,9 @@ search: ## Search skills by name/description/body: make search QUERY=<text>
 	@test -n "$(QUERY)" || { echo "Usage: make search QUERY=<text>"; exit 1; }
 	@bin/skills.sh search "$(QUERY)"
 
+list-installed: ## List skills installed in a repo (TARGET=/path/to/repo; default this repo)
+	@bin/install-skills.sh --list $(if $(TARGET),--target $(TARGET))
+
 install-skills: ## Install skills (interactive; SKILLS="name..." TARGET=/path/to/repo)
 	@bin/install-skills.sh $(if $(TARGET),--target $(TARGET)) $(SKILLS)
 

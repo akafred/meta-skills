@@ -11,11 +11,13 @@ set -euo pipefail
 # (.agents/skills when none exist) with .claude/.agents folder-symlinked to it.
 #
 # Usage:
-#   ./install-skills.sh [--target DIR] [--uninstall] [SKILL...]
+#   ./install-skills.sh [--target DIR] [--list | --uninstall] [SKILL...]
 #
-#   --target DIR, -t DIR   Repo to install skills into (default: this meta-repo).
-#                          This is the main use: point it at the repo you want
-#                          a skill installed into.
+#   --target DIR, -t DIR   Repo to install into / list / uninstall from
+#                          (default: this meta-repo). Point it at the repo you
+#                          want skills installed into.
+#   --list, -l             List skills already installed in the target, and where
+#                          each link points (no SKILL args needed).
 #   --uninstall, -u        Remove the selected skills' links from the target
 #                          (and clean up emptied skill dirs / stale dir links).
 #   SKILL...               Skill name(s) to install, or 'all'. Omit for an
@@ -26,6 +28,8 @@ set -euo pipefail
 #   ./install-skills.sh meta-repo                    # named, into this meta-repo
 #   ./install-skills.sh --target ~/code/app all      # everything, into ~/code/app
 #   ./install-skills.sh -t ~/code/app code-review    # one skill, into ~/code/app
+#   ./install-skills.sh --list                       # what's installed in this meta-repo
+#   ./install-skills.sh --list -t ~/code/app         # what's installed in ~/code/app
 #   ./install-skills.sh -u -t ~/code/app code-review # uninstall one skill
 #   ./install-skills.sh --uninstall all              # uninstall all, from this meta-repo
 #
@@ -50,8 +54,12 @@ while [[ $# -gt 0 ]]; do
       mode="uninstall"
       shift
       ;;
+    -l|--list)
+      mode="list"
+      shift
+      ;;
     -h|--help)
-      sed -n '3,33p' "$0" | sed 's/^# \{0,1\}//'
+      awk 'NR<=2{next} /^#/{sub(/^# ?/,"");print;found=1;next} found{exit}' "$0"
       exit 0
       ;;
     *)
@@ -97,6 +105,51 @@ existing_dirs=()
 for d in "${detect_dirs[@]}"; do
   [[ -e "$project_dir/$d" || -L "$project_dir/$d" ]] && existing_dirs+=("$d")
 done
+
+# Resolve a symlink's target to an absolute path via pure path math (target need
+# not exist), so dangling links are still recognized.
+resolve_link_abs() {
+  node -e 'const fs=require("fs"),path=require("path");const p=process.argv[1];console.log(path.resolve(path.dirname(p),fs.readlinkSync(p)))' "$1"
+}
+
+# --list: show what's installed in the target and where each link points.
+if [[ "$mode" == "list" ]]; then
+  echo "Installed skills in $project_dir:"
+  any=0
+  for d in "${detect_dirs[@]}"; do
+    dir_path="$project_dir/$d"
+    [[ -e "$dir_path" || -L "$dir_path" ]] || continue
+    # A skill dir that is itself a symlink is a folder-level mirror of another.
+    if [[ -L "$dir_path" ]]; then
+      mirror="$(cd "$dir_path" 2>/dev/null && pwd -P || true)"
+      mirror="${mirror#"$project_dir"/}"
+      printf '  \033[2m%s -> %s (mirror)\033[0m\n' "$d" "${mirror:-?}"
+      continue
+    fi
+    [[ -d "$dir_path" ]] || continue
+    printf '  \033[1m%s\033[0m\n' "$d"
+    listed=0
+    while IFS= read -r e; do
+      [[ -n "$e" ]] || continue
+      listed=1; any=1
+      name="$(basename "$e")"
+      if [[ -L "$e" ]]; then
+        tgt="$(resolve_link_abs "$e")"
+        if [[ "$tgt" == "$repo_root"/* ]]; then
+          mark=""; [[ -e "$e" ]] || mark=" \033[31m(dangling — run 'make update')\033[0m"
+          printf "    \033[36m%s\033[0m -> %s$mark\n" "$name" "${tgt#"$repo_root"/}"
+        else
+          printf "    \033[36m%s\033[0m -> %s \033[2m(external)\033[0m\n" "$name" "$tgt"
+        fi
+      elif [[ -d "$e" ]]; then
+        printf "    \033[36m%s\033[0m \033[2m(local dir)\033[0m\n" "$name"
+      fi
+    done < <(find "$dir_path" -mindepth 1 -maxdepth 1 | sort)
+    [[ "$listed" -eq 0 ]] && printf '    (empty)\n'
+  done
+  [[ "$any" -eq 0 ]] && echo "  (none)"
+  exit 0
+fi
 
 target_dirs=()        # dirs that receive real per-skill links
 canonical_rel=""      # set only when there is a single canonical dir
@@ -222,12 +275,6 @@ if [[ ${#chosen_idx[@]} -eq 0 ]]; then
 fi
 
 if [[ "$mode" == "uninstall" ]]; then
-  # Resolve a symlink's target to an absolute path without requiring the target
-  # to exist (pure path math), so we can still recognize our own dangling links.
-  resolve_link_abs() {
-    node -e 'const fs=require("fs"),path=require("path");const p=process.argv[1];console.log(path.resolve(path.dirname(p),fs.readlinkSync(p)))' "$1"
-  }
-
   removed_any=0
   for index in "${chosen_idx[@]}"; do
     name="${names[$index]}"
@@ -303,4 +350,6 @@ for index in "${chosen_idx[@]}"; do
 done
 
 # When there's a single canonical dir, point the other tools' folders at it.
-[[ -n "$canonical_rel" ]] && link_dir_to_canonical
+# (Plain `[[ ]] && cmd` would make the script exit non-zero when canonical_rel
+# is empty — the multi-dir case — so use an explicit if.)
+if [[ -n "$canonical_rel" ]]; then link_dir_to_canonical; fi
