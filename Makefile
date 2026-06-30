@@ -14,8 +14,8 @@ bootstrap: ## Install prerequisites (meta) and clone all sub-repos
 	@meta git update
 	@echo "✓ ready. Skills committed under .claude/skills now resolve; run 'make install-skills' to add more."
 
-update: ## Clone sub-repos newly added to .meta
-	@meta git update
+update: ## Update all sub-repos (clone new, pull rest) and summarize skill changes
+	@bin/update.sh
 
 add: ## Add a sub-repo: FOLDER=<owner>-<repo> URL=https://github.com/<owner>/<repo>.git
 	@test -n "$(FOLDER)" && test -n "$(URL)" || { echo "Usage: make add FOLDER=<owner>-<repo> URL=https://github.com/<owner>/<repo>.git"; exit 1; }

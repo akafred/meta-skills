@@ -25,12 +25,17 @@ make bootstrap
 
 ## Update everything
 
-After pulling the meta-repo, materialize any newly-added sub-repos and pull each:
+`make update` brings everything current — it clones any sub-repos newly added to `.meta`, pulls the rest, and prints a summary of how the available skills changed (added `+`, removed `-`, changed `~`, by `SKILL.md` content):
 
 ```bash
-make update   # clone any sub-repos added to .meta since last update
-make pull     # pull all repos (parallel, rebase, autostash)
+make update
+# ...
+# Skill changes:
+#   + new-skill        somerepo/skills/.../new-skill
+#   ~ review           mattpocock-skills/skills/in-progress/review
 ```
+
+`make pull` is the lighter variant: pull every repo (including this meta-repo) in parallel, no summary.
 
 ## Add another skill repo
 
@@ -90,7 +95,7 @@ make uninstall-skills TARGET=~/code/app SKILLS=all
 | Command | Does |
 | --- | --- |
 | `make bootstrap` | Install `meta` if missing, clone all sub-repos |
-| `make update` | Clone sub-repos newly added to `.meta` |
+| `make update` | Update all sub-repos (clone new, pull rest) + summarize skill changes |
 | `make add FOLDER=.. URL=..` | Add a sub-repo |
 | `make status` | Git status across all repos |
 | `make pull` | Pull all repos (parallel) |
