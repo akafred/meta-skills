@@ -6,7 +6,7 @@ set -euo pipefail
 # Usage:
 #   ./skills.sh list             # grouped by repo and category: name — description
 #   ./skills.sh search QUERY      # search name/description/body of each SKILL.md
-#   ./skills.sh show NAME         # pretty-print a skill's SKILL.md
+#   ./skills.sh show NAME         # pretty-print a skill's SKILL.md (NAME may be a substring)
 #
 # Source of truth is .meta; sub-repos must already be cloned (make bootstrap).
 
@@ -82,7 +82,11 @@ render_md() {
   if command -v glow >/dev/null 2>&1; then
     glow -w "$cols" "$f"
   elif command -v bat >/dev/null 2>&1; then
-    bat --style=plain --paging=never --language=markdown "$f"
+    # Pass an explicit theme and width so bat does not query the terminal for
+    # background colour / size (those query responses otherwise leak as stray
+    # escape sequences into the output and onto the next shell prompt).
+    bat --style=plain --paging=never --color=always --terminal-width="$cols" \
+        --theme="${BAT_THEME:-ansi}" --language=markdown "$f"
   elif command -v mdcat >/dev/null 2>&1; then
     mdcat "$f"
   else
@@ -129,22 +133,42 @@ case "$cmd" in
     [[ $hits -gt 0 ]] || { echo "No skills match: $query"; exit 1; }
     ;;
   show)
-    [[ -n "$query" ]] || { echo "Usage: ./skills.sh show <skill-name>" >&2; exit 1; }
-    matches=()
+    [[ -n "$query" ]] || { echo "Usage: ./skills.sh show <name-or-substring>" >&2; exit 1; }
+    lc() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
+    q="$(lc "$query")"
+    # Exact name/folder match wins; otherwise case-insensitive substring match.
+    exact=(); fuzzy=()
     for f in "${skill_files[@]}"; do
-      [[ "$(name_of "$f")" == "$query" || "$(basename "$(dirname "$f")")" == "$query" ]] && matches+=("$f")
+      nm="$(name_of "$f")"; bn="$(basename "$(dirname "$f")")"
+      if [[ "$nm" == "$query" || "$bn" == "$query" ]]; then
+        exact+=("$f")
+      elif [[ "$(lc "$nm")" == *"$q"* || "$(lc "$bn")" == *"$q"* ]]; then
+        fuzzy+=("$f")
+      fi
     done
+    if [[ ${#exact[@]} -gt 0 ]]; then
+      matches=("${exact[@]}")
+    elif [[ ${#fuzzy[@]} -gt 0 ]]; then
+      matches=("${fuzzy[@]}")
+    else
+      matches=()
+    fi
+
     if [[ ${#matches[@]} -eq 0 ]]; then
-      echo "No skill named '$query'. Try: ./skills.sh list" >&2
+      echo "No skill matching '$query'. Try: ./skills.sh list" >&2
+      exit 1
+    fi
+    if [[ ${#matches[@]} -gt 1 ]]; then
+      echo "'$query' matches several skills — be more specific:" >&2
+      for m in "${matches[@]}"; do
+        mcat="$(category_of "$m")"; mloc="$(repo_of "$m")"; [[ -n "$mcat" ]] && mloc="$mloc/$mcat"
+        echo "  - $(name_of "$m")  ($mloc)" >&2
+      done
       exit 1
     fi
     f="${matches[0]}"
-    if [[ ${#matches[@]} -gt 1 ]]; then
-      echo "Note: '$query' exists in multiple repos; showing $(repo_of "$f"). Others:" >&2
-      for m in "${matches[@]:1}"; do echo "  - $(repo_of "$m")/$(category_of "$m")" >&2; done
-    fi
-    cat="$(category_of "$f")"; loc="$(repo_of "$f")"; [[ -n "$cat" ]] && loc="$loc/$cat"
-    printf '\033[1m%s\033[0m  \033[2m(%s)\033[0m\n\033[2m%s\033[0m\n\n' "$(name_of "$f")" "$loc" "${f#"$repo_root"/}"
+    fcat="$(category_of "$f")"; floc="$(repo_of "$f")"; [[ -n "$fcat" ]] && floc="$floc/$fcat"
+    printf '\033[1m%s\033[0m  \033[2m(%s)\033[0m\n\033[2m%s\033[0m\n\n' "$(name_of "$f")" "$floc" "${f#"$repo_root"/}"
     render_md "$f"
     ;;
   *)

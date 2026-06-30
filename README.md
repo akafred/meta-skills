@@ -98,7 +98,7 @@ make uninstall-skills TARGET=~/code/app SKILLS=all
 | `make list` | List all skills across sub-repos (name, repo, description) |
 | `make list-repos` | List configured sub-repos (folder → url) |
 | `make search QUERY=..` | Search skills by name/description/body |
-| `make show SKILL=..` | Pretty-print a skill's `SKILL.md` |
+| `make show SKILL=..` | Pretty-print a skill's `SKILL.md` (name or substring) |
 | `make install-skills` | Symlink skills into a repo (see above) |
 | `make list-installed` | List skills installed in a repo, and where each link points |
 | `make uninstall-skills` | Remove skill links from a repo (see above) |

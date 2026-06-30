@@ -43,7 +43,7 @@ search: ## Search skills by name/description/body: make search QUERY=<text>
 	@test -n "$(QUERY)" || { echo "Usage: make search QUERY=<text>"; exit 1; }
 	@bin/skills.sh search "$(QUERY)"
 
-show: ## Pretty-print a skill's SKILL.md: make show SKILL=<name>
+show: ## Pretty-print a skill's SKILL.md: make show SKILL=<name-or-substring>
 	@test -n "$(SKILL)" || { echo "Usage: make show SKILL=<name>"; exit 1; }
 	@bin/skills.sh show "$(SKILL)"
 
