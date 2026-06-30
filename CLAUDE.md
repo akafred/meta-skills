@@ -8,7 +8,7 @@ is the authoritative guide to the pattern.
 ## What a plain `git clone` gives you (and the trap)
 
 `git clone` fetches only `.meta`, `.gitignore`, `README.md`, `Makefile`,
-`install-skills.sh`, `docs/`. The referenced sub-repos — `akafred-skills/`,
+`bin/`, `docs/`. The referenced sub-repos — `akafred-skills/`,
 `mattpocock-skills/` — are **git-ignored and absent**. The repo is not broken;
 the sub-repos are materialized separately.
 
@@ -36,7 +36,7 @@ The aggregated skills only become active after they are symlinked into a repo's
 make install-skills                          # interactive picker (into this meta-repo)
 make install-skills TARGET=~/code/app SKILLS=all
 # or the script directly for finer control:
-./install-skills.sh --target ~/code/app all
+bin/install-skills.sh --target ~/code/app all
 ```
 
 This meta-repo's own `.claude/skills/` is **committed** (relative symlinks), so a

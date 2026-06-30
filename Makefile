@@ -32,14 +32,14 @@ stats: ## Lines of code per skill repo (needs cloc)
 	@meta exec "cloc . --vcs=git --quiet" --exclude "$(meta_project)"
 
 list: ## List all skills across sub-repos (name, repo, description)
-	@./skills.sh list
+	@bin/skills.sh list
 
 list-repos: ## List configured sub-repos (folder -> url, from .meta)
 	@node -e 'const p=JSON.parse(require("fs").readFileSync(".meta","utf8")).projects; for (const [k,v] of Object.entries(p)) console.log(k+" -> "+v);'
 
 search: ## Search skills by name/description/body: make search QUERY=<text>
 	@test -n "$(QUERY)" || { echo "Usage: make search QUERY=<text>"; exit 1; }
-	@./skills.sh search "$(QUERY)"
+	@bin/skills.sh search "$(QUERY)"
 
 install-skills: ## Install skills (interactive; SKILLS="name..." TARGET=/path/to/repo)
-	@./install-skills.sh $(if $(TARGET),--target $(TARGET)) $(SKILLS)
+	@bin/install-skills.sh $(if $(TARGET),--target $(TARGET)) $(SKILLS)

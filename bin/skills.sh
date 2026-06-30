@@ -9,7 +9,7 @@ set -euo pipefail
 #
 # Source of truth is .meta; sub-repos must already be cloned (make bootstrap).
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 meta_file="$repo_root/.meta"
 cmd="${1:-list}"
 query="${2:-}"
@@ -19,10 +19,19 @@ if [[ ! -f "$meta_file" ]]; then
   exit 1
 fi
 
-# Terminal width, so descriptions stay on one line.
-cols="${COLUMNS:-}"
-[[ "$cols" =~ ^[0-9]+$ ]] || cols="$( (tput cols) 2>/dev/null || true )"
-[[ "$cols" =~ ^[0-9]+$ ]] || cols=100
+# Detect terminal width so descriptions stay on one line. COLUMNS is an explicit
+# override; otherwise ask the controlling terminal directly (works even when our
+# stdout is a pipe, e.g. under make or `| head`), then fall back to tput, then 80.
+detect_cols() {
+  local c
+  if [[ "${COLUMNS:-}" =~ ^[0-9]+$ ]]; then echo "$COLUMNS"; return; fi
+  c="$( { stty size </dev/tty | awk '{print $2}'; } 2>/dev/null || true )"
+  [[ "$c" =~ ^[0-9]+$ && "$c" -gt 0 ]] && { echo "$c"; return; }
+  c="$( (tput cols) 2>/dev/null || true )"
+  [[ "$c" =~ ^[0-9]+$ && "$c" -gt 0 ]] && { echo "$c"; return; }
+  echo 80
+}
+cols="$(detect_cols)"
 
 projects=()
 while IFS= read -r line; do

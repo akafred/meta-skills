@@ -22,7 +22,7 @@ set -euo pipefail
 # Source of truth is .meta; sub-repos must already be cloned
 # (e.g. via `meta git clone` / `meta git update`).
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 meta_file="$repo_root/.meta"
 project_dir="$repo_root"
 

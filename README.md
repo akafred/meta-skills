@@ -1,6 +1,6 @@
 # meta-skills
 
-A meta-repo that aggregates several independent skill repositories: it references the sub-repos via [`meta`](https://github.com/mateodelnorte/meta) and tracks only its own coordination files (`.meta`, `.gitignore`, this `README.md`, the `Makefile`, and `docs/`) — never the sub-repos' contents.
+A meta-repo that aggregates several independent skill repositories: it references the sub-repos via [`meta`](https://github.com/mateodelnorte/meta) and tracks only its own coordination files (`.meta`, `.gitignore`, this `README.md`, the `Makefile`, `bin/`, and `docs/`) — never the sub-repos' contents.
 
 ## Referenced skill repositories
 
@@ -44,14 +44,14 @@ This clones the repo into `<folder>` and records it in both `.meta` and `.gitign
 
 First explore what's available — `make list` lists every skill (name, repo, description) and `make search QUERY=<text>` searches names, descriptions, and bodies across all sub-repos.
 
-`install-skills.sh` discovers every `SKILL.md` across all sub-repos (read from `.meta`) and symlinks the ones you pick into a target repo's `.claude/skills/`. Point it at the repo you want the skill installed into with `--target`; with no target it installs into this meta-repo itself.
+`bin/install-skills.sh` discovers every `SKILL.md` across all sub-repos (read from `.meta`) and symlinks the ones you pick into a target repo's `.claude/skills/`. Point it at the repo you want the skill installed into with `--target`; with no target it installs into this meta-repo itself.
 
 ```bash
-./install-skills.sh                          # interactive, into this meta-repo
-./install-skills.sh meta-repo                # named skill(s), into this meta-repo
-./install-skills.sh --target ~/code/app all  # everything, into another repo
-./install-skills.sh -t ~/code/app code-review
-make install-skills SKILLS=meta-repo         # via make (this meta-repo)
+bin/install-skills.sh                          # interactive, into this meta-repo
+bin/install-skills.sh meta-repo                # named skill(s), into this meta-repo
+bin/install-skills.sh --target ~/code/app all  # everything, into another repo
+bin/install-skills.sh -t ~/code/app code-review
+make install-skills SKILLS=meta-repo           # via make (this meta-repo)
 ```
 
 Sub-repos must be cloned first (`make bootstrap` / `make update`). Links are **relative**, so they survive across clones and machines. This meta-repo's own `.claude/skills/` is committed — a fresh checkout already has the skills wired up; the links resolve once the sub-repos are materialized (`make update`), and dangle until then.
