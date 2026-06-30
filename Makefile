@@ -18,9 +18,11 @@ update: ## Clone sub-repos newly added to .meta
 	@meta git update
 
 add: ## Add a sub-repo: FOLDER=<owner>-<repo> URL=https://github.com/<owner>/<repo>.git
-	@test -n "$(FOLDER)" && test -n "$(URL)" || { echo "Usage: make add FOLDER=<name> URL=<git-url>"; exit 1; }
+	@test -n "$(FOLDER)" && test -n "$(URL)" || { echo "Usage: make add FOLDER=<owner>-<repo> URL=https://github.com/<owner>/<repo>.git"; exit 1; }
 	@meta project import $(FOLDER) $(URL)
-	@echo "✓ added '$(FOLDER)'. Commit the updated .meta and .gitignore."
+	@n=$$(find $(FOLDER) -name SKILL.md 2>/dev/null | wc -l | tr -d ' '); \
+	  echo "✓ added '$(FOLDER)' — discovered $$n skill(s). Commit the updated .meta and .gitignore."; \
+	  [ "$$n" -gt 0 ] || echo "⚠ no SKILL.md found — check the repo's layout, then 'make list'."
 
 status: ## Git status across all repos
 	@meta git status

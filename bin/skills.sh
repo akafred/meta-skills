@@ -77,13 +77,13 @@ truncate() {
 
 case "$cmd" in
   list)
-    cur_repo=""; cur_cat=$'\x00'
+    cur_repo=""; cur_cat='//unset//'
     namecol=26
     for f in "${skill_files[@]}"; do
       repo="$(repo_of "$f")"; cat="$(category_of "$f")"
       name="$(name_of "$f")"; desc="$(field "$f" description)"
       if [[ "$repo" != "$cur_repo" ]]; then
-        printf '\n\033[1m%s\033[0m\n' "$repo"; cur_repo="$repo"; cur_cat=$'\x00'
+        printf '\n\033[1m%s\033[0m\n' "$repo"; cur_repo="$repo"; cur_cat='//unset//'
       fi
       if [[ "$cat" != "$cur_cat" ]]; then
         if [[ -n "$cat" ]]; then printf '  \033[33m%s/\033[0m\n' "$cat"; else printf '  \033[33m(uncategorized)\033[0m\n'; fi
