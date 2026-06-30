@@ -9,10 +9,11 @@ is the authoritative guide to the pattern.
 
 Every operation on this repo is a `make` target. Run `make help` first and use the
 matching target — adding a repo, updating, listing or searching skills, installing
-them, status, stats all map to one. Don't reverse-engineer commands by reading
-`.meta`/`Makefile`, and don't hand-roll `meta`/`git` invocations; the target is the
-interface. A request like "add obra/superpowers" is just `make add` with the
-conventions below.
+or uninstalling them, status, stats all map to one. The `## ` text on each target
+is its full usage (parameters included), so don't open the `Makefile` to confirm a
+command, don't reverse-engineer from `.meta`, and don't hand-roll `meta`/`git`
+invocations; the target is the interface. A request like "add obra/superpowers" is
+just `make add` with the conventions below.
 
 ## What a plain `git clone` gives you (and the trap)
 
