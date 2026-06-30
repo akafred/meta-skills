@@ -154,9 +154,12 @@ for index in "${chosen_idx[@]}"; do
   name="${names[$index]}"
   source_dir="${sources[$index]}"
   link_path="$target_dir/$name"
+  # Relative link (resolved from the link's own directory), so committed links
+  # stay valid across clones and machines.
+  link_target="$(node -e 'console.log(require("path").relative(process.argv[1], process.argv[2]))' "$target_dir" "$source_dir")"
 
   if [[ -L "$link_path" ]]; then
-    if [[ "$(readlink "$link_path")" == "$source_dir" ]]; then
+    if [[ "$(readlink "$link_path")" == "$link_target" ]]; then
       echo "Already linked: $name"
       continue
     fi
@@ -167,6 +170,6 @@ for index in "${chosen_idx[@]}"; do
     continue
   fi
 
-  ln -s "$source_dir" "$link_path"
-  echo "Linked: $name -> $source_dir"
+  ln -s "$link_target" "$link_path"
+  echo "Linked: $name -> $link_target"
 done

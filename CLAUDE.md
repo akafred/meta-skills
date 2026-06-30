@@ -33,8 +33,10 @@ The aggregated skills only become active after they are symlinked into a repo's
 ./install-skills.sh --target ~/code/app all  # install into another repo
 ```
 
-`.claude/skills/` here is git-ignored and per-machine — re-run the script after
-cloning. See `README.md` for the full command set and `make help` for the menu.
+This meta-repo's own `.claude/skills/` is **committed** (relative symlinks), so a
+fresh checkout already has the skills wired up — they resolve once the sub-repos
+are materialized (`meta git update`) and dangle until then. See `README.md` for
+the full command set and `make help` for the menu.
 
 ## What lives where
 

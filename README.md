@@ -46,7 +46,7 @@ This clones the repo into `<folder>` and records it in both `.meta` and `.gitign
 make install-skills SKILLS=meta-repo         # via make (this meta-repo)
 ```
 
-Sub-repos must be cloned first (`meta git clone` / `meta git update`). Links are absolute (they point into this meta-repo's sub-repo checkouts), so the target repo resolves them as long as this meta-repo stays put. The meta-repo's own `.claude/skills/` is git-ignored and per-machine — re-run the script after cloning.
+Sub-repos must be cloned first (`meta git clone` / `meta git update`). Links are **relative**, so they survive across clones and machines. This meta-repo's own `.claude/skills/` is committed — a fresh checkout already has the skills wired up; the links resolve once the sub-repos are materialized (`meta git update`), and dangle until then.
 
 ## Common operations
 
