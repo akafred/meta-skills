@@ -18,5 +18,5 @@ stats: ## Lines of code per skill repo (needs cloc)
 list: ## List configured projects (folder -> url, from .meta)
 	@node -e 'const p=JSON.parse(require("fs").readFileSync(".meta","utf8")).projects; for (const [k,v] of Object.entries(p)) console.log(k+" -> "+v);'
 
-install-skills: ## Install skills into this meta-repo (interactive; or: make install-skills SKILLS="meta-repo")
-	@./install-skills.sh $(SKILLS)
+install-skills: ## Install skills (interactive; SKILLS="name..." TARGET=/path/to/repo)
+	@./install-skills.sh $(if $(TARGET),--target $(TARGET)) $(SKILLS)
