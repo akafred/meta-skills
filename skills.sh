@@ -4,8 +4,8 @@ set -euo pipefail
 # List or search skills discovered across every sub-repo listed in .meta.
 #
 # Usage:
-#   ./skills.sh list            # list every skill: name (repo) — description
-#   ./skills.sh search QUERY     # search name/description/body of each SKILL.md
+#   ./skills.sh list             # grouped by repo and category: name — description
+#   ./skills.sh search QUERY      # search name/description/body of each SKILL.md
 #
 # Source of truth is .meta; sub-repos must already be cloned (make bootstrap).
 
@@ -19,12 +19,17 @@ if [[ ! -f "$meta_file" ]]; then
   exit 1
 fi
 
+# Terminal width, so descriptions stay on one line.
+cols="${COLUMNS:-}"
+[[ "$cols" =~ ^[0-9]+$ ]] || cols="$( (tput cols) 2>/dev/null || true )"
+[[ "$cols" =~ ^[0-9]+$ ]] || cols=100
+
 projects=()
 while IFS= read -r line; do
   [[ -n "$line" ]] && projects+=("$line")
 done < <(node -e 'const p=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).projects||{};for(const k of Object.keys(p))console.log(k)' "$meta_file")
 
-# Collect SKILL.md paths across all cloned sub-repos.
+# Collect SKILL.md paths across all cloned sub-repos (sorted by path => grouped).
 skill_files=()
 for proj in "${projects[@]}"; do
   proj_dir="$repo_root/$proj"
@@ -39,36 +44,63 @@ if [[ ${#skill_files[@]} -eq 0 ]]; then
   exit 1
 fi
 
-# Frontmatter field from the leading --- block (first match wins).
 field() { sed -n "s/^$2:[[:space:]]*//p" "$1" | head -1; }
+repo_of() { local r="${1#"$repo_root"/}"; echo "${r%%/*}"; }
+name_of() { local n; n="$(field "$1" name)"; [[ -n "$n" ]] && echo "$n" || basename "$(dirname "$1")"; }
 
-print_skill() {
-  local f="$1" dir name desc proj
-  dir="$(dirname "$f")"
-  proj="${f#"$repo_root"/}"; proj="${proj%%/*}"
-  name="$(field "$f" name)"; [[ -n "$name" ]] || name="$(basename "$dir")"
-  desc="$(field "$f" description)"
-  if [[ -n "$desc" ]]; then
-    printf "\033[36m%-22s\033[0m \033[2m%-18s\033[0m %s\n" "$name" "($proj)" "$desc"
-  else
-    printf "\033[36m%-22s\033[0m \033[2m%-18s\033[0m\n" "$name" "($proj)"
-  fi
+# Category = path between the repo folder and the skill folder, minus a leading "skills".
+category_of() {
+  local rel="${1#"$repo_root"/}"; rel="${rel%/SKILL.md}"
+  local after="${rel#*/}"
+  [[ "$after" == "$rel" ]] && { echo ""; return; }      # no category segment
+  local cat="${after%/*}"
+  [[ "$cat" == "$after" ]] && { echo ""; return; }       # skill sits directly under repo
+  cat="${cat#skills/}"; [[ "$cat" == "skills" ]] && cat=""
+  echo "$cat"
+}
+
+# Truncate $1 to width $2, adding an ellipsis when cut.
+truncate() {
+  local t="$1" w="$2"
+  (( w <= 1 )) && return
+  if (( ${#t} > w )); then printf '%s…' "${t:0:w-1}"; else printf '%s' "$t"; fi
 }
 
 case "$cmd" in
   list)
-    for f in "${skill_files[@]}"; do print_skill "$f"; done
+    cur_repo=""; cur_cat=$'\x00'
+    namecol=26
+    for f in "${skill_files[@]}"; do
+      repo="$(repo_of "$f")"; cat="$(category_of "$f")"
+      name="$(name_of "$f")"; desc="$(field "$f" description)"
+      if [[ "$repo" != "$cur_repo" ]]; then
+        printf '\n\033[1m%s\033[0m\n' "$repo"; cur_repo="$repo"; cur_cat=$'\x00'
+      fi
+      if [[ "$cat" != "$cur_cat" ]]; then
+        if [[ -n "$cat" ]]; then printf '  \033[33m%s/\033[0m\n' "$cat"; else printf '  \033[33m(uncategorized)\033[0m\n'; fi
+        cur_cat="$cat"
+      fi
+      local_field=$(( ${#name} > namecol ? ${#name} : namecol ))
+      printf '    \033[36m%s\033[0m%*s ' "$name" $(( local_field - ${#name} )) ''
+      remain=$(( cols - 4 - local_field - 1 ))
+      [[ -n "$desc" && $remain -gt 1 ]] && truncate "$desc" "$remain"
+      printf '\n'
+    done
     ;;
   search)
     [[ -n "$query" ]] || { echo "Usage: ./skills.sh search QUERY" >&2; exit 1; }
     hits=0
     for f in "${skill_files[@]}"; do
-      if grep -iq -- "$query" "$f"; then
-        hits=$((hits + 1))
-        print_skill "$f"
-        # show the matching lines (skip frontmatter keys for signal)
-        grep -in -- "$query" "$f" | grep -viE '^[0-9]+:(name|description):' | sed 's/^/    /' || true
-      fi
+      grep -iq -- "$query" "$f" || continue
+      hits=$((hits + 1))
+      repo="$(repo_of "$f")"; cat="$(category_of "$f")"
+      name="$(name_of "$f")"; desc="$(field "$f" description)"
+      loc="$repo"; [[ -n "$cat" ]] && loc="$repo/$cat"
+      printf '\033[36m%s\033[0m \033[2m(%s)\033[0m ' "$name" "$loc"
+      remain=$(( cols - ${#name} - ${#loc} - 4 ))
+      [[ -n "$desc" && $remain -gt 1 ]] && truncate "$desc" "$remain"
+      printf '\n'
+      grep -in -- "$query" "$f" | grep -viE '^[0-9]+:(name|description):' | sed 's/^/    /' || true
     done
     [[ $hits -gt 0 ]] || { echo "No skills match: $query"; exit 1; }
     ;;
