@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Installs skills into a target repo's .claude/skills/ by symlinking SKILL.md
-# directories discovered across every sub-repo listed in this meta-repo's .meta.
+# Installs skills into a target repo by symlinking SKILL.md directories
+# discovered across every sub-repo listed in this meta-repo's .meta.
+#
+# Skill folders are chosen for cross-tool compatibility (Claude Code, Copilot
+# CLI, OpenCode, Codex): real per-skill links go into whichever of
+# .claude/skills / .agents/skills / .github/skills / .gemini/skills /
+# .opencode/skills already exist (each, if 2+), else a single canonical dir
+# (.agents/skills when none exist) with .claude/.agents folder-symlinked to it.
 #
 # Usage:
 #   ./install-skills.sh [--target DIR] [SKILL...]
@@ -36,7 +42,7 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     -h|--help)
-      sed -n '3,24p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '3,29p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *)
@@ -55,7 +61,61 @@ if [[ ! -d "$project_dir" ]]; then
   exit 1
 fi
 project_dir="$(cd "$project_dir" && pwd)"
-target_dir="$project_dir/.claude/skills"
+
+# Decide where to install skills for cross-tool compatibility.
+#
+# Different agents discover skills from different per-repo folders:
+#   .claude/skills    Claude Code, Copilot CLI, OpenCode
+#   .agents/skills    Copilot CLI, OpenCode, Codex (the vendor-neutral standard)
+#   .github/skills    Copilot CLI
+#   .gemini/skills    Gemini CLI
+#   .opencode/skills  OpenCode
+#
+# .claude/skills + .agents/skills together cover all four major tools, so those
+# are the only dirs we ever auto-create (the "materialize" set). The detection
+# set is wider: if a repo already opted into any of them, we respect it.
+#
+# Logic, by how many prominent skill dirs already physically exist:
+#   >= 2 exist  -> install real per-skill links into EACH (respect the repo).
+#   exactly 1   -> that one is canonical; real links there, then folder-level
+#                  symlink the missing materialize dirs to it.
+#   0 exist     -> create .agents/skills as canonical, then folder-level symlink
+#                  the rest of the materialize set to it.
+detect_dirs=(.claude/skills .agents/skills .github/skills .gemini/skills .opencode/skills)
+materialize_dirs=(.claude/skills .agents/skills)
+
+existing_dirs=()
+for d in "${detect_dirs[@]}"; do
+  [[ -e "$project_dir/$d" || -L "$project_dir/$d" ]] && existing_dirs+=("$d")
+done
+
+target_dirs=()        # dirs that receive real per-skill links
+canonical_rel=""      # set only when there is a single canonical dir
+if [[ ${#existing_dirs[@]} -ge 2 ]]; then
+  for d in "${existing_dirs[@]}"; do target_dirs+=("$project_dir/$d"); done
+else
+  if [[ ${#existing_dirs[@]} -eq 1 ]]; then
+    canonical_rel="${existing_dirs[0]}"
+  else
+    canonical_rel=".agents/skills"
+  fi
+  target_dirs+=("$project_dir/$canonical_rel")
+fi
+
+# Create folder-level symlinks from the materialize set to the canonical dir.
+link_dir_to_canonical() {
+  local canonical_abs="$project_dir/$canonical_rel"
+  for d in "${materialize_dirs[@]}"; do
+    [[ "$d" == "$canonical_rel" ]] && continue
+    local link_path="$project_dir/$d"
+    [[ -e "$link_path" || -L "$link_path" ]] && continue
+    local link_parent; link_parent="$(dirname "$link_path")"
+    mkdir -p "$link_parent"
+    local rel; rel="$(node -e 'console.log(require("path").relative(process.argv[1], process.argv[2]))' "$link_parent" "$canonical_abs")"
+    ln -s "$rel" "$link_path"
+    echo "Linked dir: $d -> $rel"
+  done
+}
 
 # Sub-repo folder names, read from .meta (node is a meta prerequisite).
 projects=()
@@ -111,7 +171,7 @@ if [[ ${#selection_args[@]} -gt 0 ]]; then
   fi
 else
   echo "Source:  $repo_root (across sub-repos)"
-  echo "Target:  $target_dir"
+  echo "Target:  ${target_dirs[*]}"
   echo
   echo "Available skills:"
   for i in "${!labels[@]}"; do
@@ -148,28 +208,33 @@ if [[ ${#chosen_idx[@]} -eq 0 ]]; then
   exit 0
 fi
 
-mkdir -p "$target_dir"
+mkdir -p "${target_dirs[@]}"
 
 for index in "${chosen_idx[@]}"; do
   name="${names[$index]}"
   source_dir="${sources[$index]}"
-  link_path="$target_dir/$name"
-  # Relative link (resolved from the link's own directory), so committed links
-  # stay valid across clones and machines.
-  link_target="$(node -e 'console.log(require("path").relative(process.argv[1], process.argv[2]))' "$target_dir" "$source_dir")"
+  for target_dir in "${target_dirs[@]}"; do
+    link_path="$target_dir/$name"
+    # Relative link (resolved from the link's own directory), so committed links
+    # stay valid across clones and machines.
+    link_target="$(node -e 'console.log(require("path").relative(process.argv[1], process.argv[2]))' "$target_dir" "$source_dir")"
 
-  if [[ -L "$link_path" ]]; then
-    if [[ "$(readlink "$link_path")" == "$link_target" ]]; then
-      echo "Already linked: $name"
+    if [[ -L "$link_path" ]]; then
+      if [[ "$(readlink "$link_path")" == "$link_target" ]]; then
+        echo "Already linked: $name ($target_dir)"
+        continue
+      fi
+      echo "Replacing existing symlink: $name ($target_dir)"
+      rm "$link_path"
+    elif [[ -e "$link_path" ]]; then
+      echo "Skipping $name: target exists and is not a symlink ($link_path)" >&2
       continue
     fi
-    echo "Replacing existing symlink: $name"
-    rm "$link_path"
-  elif [[ -e "$link_path" ]]; then
-    echo "Skipping $name: target exists and is not a symlink ($link_path)" >&2
-    continue
-  fi
 
-  ln -s "$link_target" "$link_path"
-  echo "Linked: $name -> $link_target"
+    ln -s "$link_target" "$link_path"
+    echo "Linked: $name -> $link_target ($target_dir)"
+  done
 done
+
+# When there's a single canonical dir, point the other tools' folders at it.
+[[ -n "$canonical_rel" ]] && link_dir_to_canonical

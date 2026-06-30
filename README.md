@@ -48,7 +48,7 @@ Conventions: the folder is named `<owner>-<repo>` (e.g. `mattpocock/skills` → 
 
 First explore what's available — `make list` lists every skill (name, repo, description) and `make search QUERY=<text>` searches names, descriptions, and bodies across all sub-repos.
 
-`bin/install-skills.sh` discovers every `SKILL.md` across all sub-repos (read from `.meta`) and symlinks the ones you pick into a target repo's `.claude/skills/`. Point it at the repo you want the skill installed into with `--target`; with no target it installs into this meta-repo itself.
+`bin/install-skills.sh` discovers every `SKILL.md` across all sub-repos (read from `.meta`) and symlinks the ones you pick into a target repo, choosing skill folders for **cross-tool compatibility** (Claude Code, Copilot CLI, OpenCode, Codex). Point it at the repo you want the skill installed into with `--target`; with no target it installs into this meta-repo itself.
 
 ```bash
 bin/install-skills.sh                          # interactive, into this meta-repo
@@ -58,7 +58,15 @@ bin/install-skills.sh -t ~/code/app code-review
 make install-skills SKILLS=meta-repo           # via make (this meta-repo)
 ```
 
-Sub-repos must be cloned first (`make bootstrap` / `make update`). Links are **relative**, so they survive across clones and machines. This meta-repo's own `.claude/skills/` is committed — a fresh checkout already has the skills wired up; the links resolve once the sub-repos are materialized (`make update`), and dangle until then.
+### Where skills get installed
+
+Different agents discover skills from different per-repo folders. `.claude/skills` (Claude Code, Copilot CLI, OpenCode) and `.agents/skills` (Copilot CLI, OpenCode, Codex — the vendor-neutral standard) together cover all four, so those are the only folders the installer ever auto-creates. It also recognizes `.github/skills`, `.gemini/skills`, and `.opencode/skills` if a repo already uses them. The target is chosen by how many of those folders already physically exist:
+
+- **2 or more exist** → real per-skill links are installed into **each** of them (the repo's existing conventions are respected; nothing new is created).
+- **Exactly 1 exists** → it becomes canonical (real links live there), and the missing folder of `.claude/skills` / `.agents/skills` is created as a **folder-level symlink** to it.
+- **None exist** → `.agents/skills` is created as canonical, with `.claude/skills` symlinked to it.
+
+Sub-repos must be cloned first (`make bootstrap` / `make update`). Links are **relative**, so they survive across clones and machines. This meta-repo's own `.claude/skills/` is committed (with `.agents/skills` symlinked to it) — a fresh checkout already has the skills wired up for every agent; the links resolve once the sub-repos are materialized (`make update`), and dangle until then.
 
 ## Common operations
 
