@@ -1,2 +1,5 @@
 /akafred-skills/
 /mattpocock-skills/
+
+# Locally materialized skill symlinks (regenerate with ./install-skills.sh)
+/.claude/skills/

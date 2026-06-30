@@ -34,6 +34,19 @@ meta project import <folder> <git-url>
 
 This clones the repo into `<folder>` and records it in both `.meta` and `.gitignore`. Then commit the updated `.meta` and `.gitignore` in this meta-repo.
 
+## Install skills into this meta-repo
+
+`install-skills.sh` discovers every `SKILL.md` across all sub-repos (read from `.meta`) and symlinks the ones you pick into this meta-repo's `.claude/skills/`, so the meta-repo itself has the skills available.
+
+```bash
+./install-skills.sh                  # interactive picker
+./install-skills.sh meta-repo        # install named skill(s)
+./install-skills.sh all              # install everything discovered
+make install-skills SKILLS=meta-repo # same, via make
+```
+
+Sub-repos must be cloned first (`meta git clone` / `meta git update`). The materialized `.claude/skills/` symlinks are git-ignored and per-machine — re-run the script after cloning. Links are relative, so they resolve in any clone once the sub-repos are present.
+
 ## Common operations
 
 Run `make help` for the command menu. See `docs/` for cross-repo documentation.
