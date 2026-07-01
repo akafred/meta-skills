@@ -6,8 +6,12 @@ A meta-repo that aggregates several independent skill repositories: it reference
 
 | Folder | Source |
 | --- | --- |
+| `akafred-code-design-review` | `git@github.com:akafred/code-design-review.git` |
+| `akafred-prezzie` | `git@github.com:akafred/prezzie.git` |
 | `akafred-skills` | `git@github.com:akafred/skills.git` |
+| `kjetiljd-skills` | `https://github.com/kjetiljd/skills.git` |
 | `mattpocock-skills` | `https://github.com/mattpocock/skills.git` |
+| `obra-superpowers` | `https://github.com/obra/superpowers.git` |
 
 ## Clone everything
 
