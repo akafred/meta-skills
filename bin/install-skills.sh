@@ -40,6 +40,12 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 meta_file="$repo_root/.meta"
 project_dir="$repo_root"
 
+# Skill name comes from the SKILL.md 'name:' frontmatter, falling back to the
+# containing directory's basename (matches skills.sh). This lets a skill whose
+# SKILL.md sits at its repo root still be addressed by its declared name.
+field() { sed -n "s/^$2:[[:space:]]*//p" "$1" | head -1; }
+name_of() { local n; n="$(field "$1" name)"; [[ -n "$n" ]] && echo "$n" || basename "$(dirname "$1")"; }
+
 # Parse options; collect non-option args as the skill selection.
 mode="install"
 selection_args=()
@@ -197,9 +203,9 @@ for proj in "${projects[@]}"; do
   fi
   while IFS= read -r skill_md; do
     skill_dir="$(dirname "$skill_md")"
-    names+=("$(basename "$skill_dir")")
+    names+=("$(name_of "$skill_md")")
     sources+=("$skill_dir")
-    labels+=("$(basename "$skill_dir")  ($proj)")
+    labels+=("$(name_of "$skill_md")  ($proj)")
   done < <(find "$proj_dir" -name SKILL.md -print | sort)
 done
 
