@@ -1,6 +1,8 @@
 # meta-skills
 
-A meta-repo that aggregates several independent skill repositories: it references the sub-repos via [`meta`](https://github.com/mateodelnorte/meta) and tracks only its own coordination files (`.meta`, `.gitignore`, this `README.md`, the `Makefile`, `bin/`, and `docs/`) — never the sub-repos' contents.
+Agent skills live scattered across many separate repos — your own and third parties'. **meta-skills** is one place to clone, update, and search them all, then symlink the ones you want into any project — working across Claude Code, Copilot CLI, OpenCode, and Codex, with each source repo staying authoritative.
+
+Because skills are symlinked in rather than copied, it's easy to try them out and develop them across several projects at once: edit a skill in one place and every project that links it picks up the change immediately. To share your skills with other people, though, install them the conventional way — the symlinks are for your own local use, not for distribution.
 
 ## Referenced skill repositories
 
