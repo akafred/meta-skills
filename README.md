@@ -6,6 +6,10 @@ A meta-repo that aggregates several independent skill repositories: it reference
 
 | Folder | Source |
 | --- | --- |
+| `akafred-code-design-review` | `git@github.com:akafred/code-design-review.git` |
+| `akafred-prezzie` | `git@github.com:akafred/prezzie.git` |
+| `akafred-skills` | `git@github.com:akafred/skills.git` |
+| `kjetiljd-skills` | `https://github.com/kjetiljd/skills.git` |
 | `mattpocock-skills` | `https://github.com/mattpocock/skills.git` |
 | `obra-superpowers` | `https://github.com/obra/superpowers.git` |
 
@@ -45,7 +49,7 @@ make add FOLDER=<owner>-<repo> URL=https://github.com/<owner>/<repo>.git
 make add FOLDER=mattpocock-skills URL=https://github.com/mattpocock/skills.git
 ```
 
-Conventions: the folder is named `<owner>-<repo>` (e.g. `mattpocock/skills` → `mattpocock-skills`); use an HTTPS URL for third-party repos and SSH (`git@github.com:<owner>/<repo>.git`) only for repos you own and push to.
+Conventions: the folder is named `<owner>-<repo>` (e.g. `mattpocock/skills` → `mattpocock-skills`); use an HTTPS URL for third-party repos and SSH (`git@github.com:<owner>/<repo>.git`) only for repos you own and push to — which is why `akafred-skills` uses SSH and the others HTTPS.
 
 `make add` clones the repo into `<folder>` and records it in both `.meta` and `.gitignore`. Then commit the updated `.meta` and `.gitignore` in this meta-repo.
 
@@ -57,7 +61,7 @@ First explore what's available — `make list` lists every skill (name, repo, de
 
 ```bash
 make install-skills                                  # interactive, into this meta-repo
-make install-skills SKILLS=code-review               # named skill(s), into this meta-repo
+make install-skills SKILLS=meta-repo                 # named skill(s), into this meta-repo
 make install-skills TARGET=~/code/app SKILLS=all     # everything, into another repo
 ```
 
@@ -69,7 +73,7 @@ Different agents discover skills from different per-repo folders. A one-line sum
 - **Exactly 1 exists** → it becomes canonical (real links live there), and the missing folder of `.claude/skills` / `.agents/skills` is created as a **folder-level symlink** to it.
 - **None exist** → `.agents/skills` is created as canonical, with `.claude/skills` symlinked to it.
 
-Sub-repos must be cloned first (`make bootstrap` / `make update`). Links are **relative**, so they survive across clones and machines. This meta-repo ships no committed skill links; install the ones you want with `make install-skills` after the sub-repos are materialized.
+Sub-repos must be cloned first (`make bootstrap` / `make update`). Links are **relative**, so they survive across clones and machines. This meta-repo's own `.claude/skills/` is committed (with `.agents/skills` symlinked to it) — a fresh checkout already has the skills wired up for every agent; the links resolve once the sub-repos are materialized (`make update`), and dangle until then.
 
 ### Listing what's installed
 
@@ -80,7 +84,7 @@ Sub-repos must be cloned first (`make bootstrap` / `make update`). Links are **r
 `make uninstall-skills` removes the selected skills' links from the target repo. It only removes symlinks that point back into this meta-repo (your own files and foreign symlinks are left untouched), then cleans up: emptied skill dirs are removed and any now-dangling folder-level symlinks (e.g. `.agents/skills → .claude/skills`) are dropped.
 
 ```bash
-make uninstall-skills SKILLS=code-review             # remove one skill, from this meta-repo
+make uninstall-skills SKILLS=meta-repo               # remove one skill, from this meta-repo
 make uninstall-skills TARGET=~/code/app SKILLS=all   # remove everything, from another repo
 ```
 
