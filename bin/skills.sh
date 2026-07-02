@@ -7,6 +7,7 @@ set -euo pipefail
 #   ./skills.sh list             # grouped by repo and category: name — description
 #   ./skills.sh search QUERY      # search name/description/body of each SKILL.md
 #   ./skills.sh show NAME         # pretty-print a skill's SKILL.md (NAME may be a substring)
+#   ./skills.sh peek NAME         # print just a skill's frontmatter (NAME may be a substring)
 #
 # Source of truth is .meta; sub-repos must already be cloned (make bootstrap).
 
@@ -94,6 +95,50 @@ render_md() {
   fi
 }
 
+# Resolve a name-or-substring to a single SKILL.md path (echoed on stdout).
+# Exact name/folder match wins; otherwise case-insensitive substring match.
+# Errors and exits when there is no match or the match is ambiguous.
+resolve_skill() {
+  local query="$1" q
+  q="$(printf '%s' "$query" | tr '[:upper:]' '[:lower:]')"
+  local exact=() fuzzy=()
+  local f nm bn
+  for f in "${skill_files[@]}"; do
+    nm="$(name_of "$f")"; bn="$(basename "$(dirname "$f")")"
+    if [[ "$nm" == "$query" || "$bn" == "$query" ]]; then
+      exact+=("$f")
+    elif [[ "$(printf '%s' "$nm" | tr '[:upper:]' '[:lower:]')" == *"$q"* \
+         || "$(printf '%s' "$bn" | tr '[:upper:]' '[:lower:]')" == *"$q"* ]]; then
+      fuzzy+=("$f")
+    fi
+  done
+  local matches=()
+  if [[ ${#exact[@]} -gt 0 ]]; then matches=("${exact[@]}")
+  elif [[ ${#fuzzy[@]} -gt 0 ]]; then matches=("${fuzzy[@]}"); fi
+  if [[ ${#matches[@]} -eq 0 ]]; then
+    echo "No skill matching '$query'. Try: ./skills.sh list" >&2
+    exit 1
+  fi
+  if [[ ${#matches[@]} -gt 1 ]]; then
+    echo "'$query' matches several skills — be more specific:" >&2
+    local m mcat mloc
+    for m in "${matches[@]}"; do
+      mcat="$(category_of "$m")"; mloc="$(repo_of "$m")"; [[ -n "$mcat" ]] && mloc="$mloc/$mcat"
+      echo "  - $(name_of "$m")  ($mloc)" >&2
+    done
+    exit 1
+  fi
+  printf '%s' "${matches[0]}"
+}
+
+# Print the header line (name, location, relative path) for a resolved skill.
+skill_header() {
+  local f="$1" fcat floc
+  fcat="$(category_of "$f")"; floc="$(repo_of "$f")"; [[ -n "$fcat" ]] && floc="$floc/$fcat"
+  printf '\033[1m%s\033[0m  \033[2m(%s)\033[0m\n\033[2m%s\033[0m\n\n' \
+    "$(name_of "$f")" "$floc" "${f#"$repo_root"/}"
+}
+
 case "$cmd" in
   list)
     cur_repo=""; cur_cat='//unset//'
@@ -134,45 +179,23 @@ case "$cmd" in
     ;;
   show)
     [[ -n "$query" ]] || { echo "Usage: ./skills.sh show <name-or-substring>" >&2; exit 1; }
-    lc() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
-    q="$(lc "$query")"
-    # Exact name/folder match wins; otherwise case-insensitive substring match.
-    exact=(); fuzzy=()
-    for f in "${skill_files[@]}"; do
-      nm="$(name_of "$f")"; bn="$(basename "$(dirname "$f")")"
-      if [[ "$nm" == "$query" || "$bn" == "$query" ]]; then
-        exact+=("$f")
-      elif [[ "$(lc "$nm")" == *"$q"* || "$(lc "$bn")" == *"$q"* ]]; then
-        fuzzy+=("$f")
-      fi
-    done
-    if [[ ${#exact[@]} -gt 0 ]]; then
-      matches=("${exact[@]}")
-    elif [[ ${#fuzzy[@]} -gt 0 ]]; then
-      matches=("${fuzzy[@]}")
-    else
-      matches=()
-    fi
-
-    if [[ ${#matches[@]} -eq 0 ]]; then
-      echo "No skill matching '$query'. Try: ./skills.sh list" >&2
-      exit 1
-    fi
-    if [[ ${#matches[@]} -gt 1 ]]; then
-      echo "'$query' matches several skills — be more specific:" >&2
-      for m in "${matches[@]}"; do
-        mcat="$(category_of "$m")"; mloc="$(repo_of "$m")"; [[ -n "$mcat" ]] && mloc="$mloc/$mcat"
-        echo "  - $(name_of "$m")  ($mloc)" >&2
-      done
-      exit 1
-    fi
-    f="${matches[0]}"
-    fcat="$(category_of "$f")"; floc="$(repo_of "$f")"; [[ -n "$fcat" ]] && floc="$floc/$fcat"
-    printf '\033[1m%s\033[0m  \033[2m(%s)\033[0m\n\033[2m%s\033[0m\n\n' "$(name_of "$f")" "$floc" "${f#"$repo_root"/}"
+    f="$(resolve_skill "$query")"
+    skill_header "$f"
     render_md "$f"
     ;;
+  peek)
+    [[ -n "$query" ]] || { echo "Usage: ./skills.sh peek <name-or-substring>" >&2; exit 1; }
+    f="$(resolve_skill "$query")"
+    skill_header "$f"
+    # Print only the YAML frontmatter (between the leading pair of --- fences).
+    awk '
+      NR==1 && $0 !~ /^---[[:space:]]*$/ { exit }
+      /^---[[:space:]]*$/ { fence++; if (fence==1) next; if (fence==2) exit }
+      fence==1 { print }
+    ' "$f"
+    ;;
   *)
-    echo "Unknown command: $cmd (use 'list', 'search QUERY', or 'show NAME')" >&2
+    echo "Unknown command: $cmd (use 'list', 'search QUERY', 'show NAME', or 'peek NAME')" >&2
     exit 1
     ;;
 esac

@@ -47,6 +47,10 @@ show: ## Pretty-print a skill's SKILL.md: make show SKILL=<name-or-substring>
 	@test -n "$(SKILL)" || { echo "Usage: make show SKILL=<name>"; exit 1; }
 	@bin/skills.sh show "$(SKILL)"
 
+peek: ## Print a skill's frontmatter: make peek SKILL=<name-or-substring>
+	@test -n "$(SKILL)" || { echo "Usage: make peek SKILL=<name>"; exit 1; }
+	@bin/skills.sh peek "$(SKILL)"
+
 list-installed: ## List skills installed in a repo (TARGET=/path/to/repo; default this repo)
 	@bin/install-skills.sh --list $(if $(TARGET),--target $(TARGET))
 
