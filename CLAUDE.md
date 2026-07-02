@@ -2,8 +2,7 @@
 
 This is a **meta-repo**, not a normal repo. It contains no skills of its own — it
 *references* other skill repositories via [`meta`](https://github.com/mateodelnorte/meta).
-The `meta-repo` skill (in `akafred-skills/skills/engineering/meta-repo/SKILL.md`)
-is the authoritative guide to the pattern.
+`README.md` and `make help` are the authoritative guide to the pattern.
 
 ## Use `make` as the entry point
 
@@ -23,8 +22,8 @@ would fail clearly on its own.
 ## What a plain `git clone` gives you (and the trap)
 
 `git clone` fetches only `.meta`, `.gitignore`, `README.md`, `Makefile`,
-`bin/`, `docs/`. The referenced sub-repos — `akafred-skills/`,
-`mattpocock-skills/` — are **git-ignored and absent**. The repo is not broken;
+`bin/`, `docs/`. The referenced sub-repos — `mattpocock-skills/`,
+`obra-superpowers/` — are **git-ignored and absent**. The repo is not broken;
 the sub-repos are materialized separately.
 
 To get everything:
@@ -50,24 +49,19 @@ The aggregated skills only become active after they are symlinked into a repo's
 ```bash
 make install-skills                          # interactive picker (into this meta-repo)
 make install-skills TARGET=~/code/app SKILLS=all
-# or the script directly for finer control:
-bin/install-skills.sh --target ~/code/app all
 ```
 
 A skill you install is **active immediately**: install only finds skills that live
 in an already-cloned sub-repo, so the new link resolves right away — don't tell the
-user it will activate later. The "dangles until materialized" caveat applies only
-to this meta-repo's own **committed** `.claude/skills/` links on a fresh checkout
-(before `meta git update`), never to a fresh install. See `README.md` for the full
-command set and `make help` for the menu.
+user it will activate later. See `README.md` for the full command set and
+`make help` for the menu.
 
 ## Conventions `make help` can't show
 
 - **Adding a repo** (`make add`): name the folder `<owner>-<repo>` (e.g.
   `mattpocock/skills` → `mattpocock-skills`), and use an HTTPS URL for third-party
   repos — SSH (`git@github.com:<owner>/<repo>.git`) only for repos you own and
-  push to, which is why `akafred-skills` uses SSH and the rest HTTPS. Commit the
-  updated `.meta` + `.gitignore` afterward.
+  push to. Commit the updated `.meta` + `.gitignore` afterward.
 
 ## What lives where
 
