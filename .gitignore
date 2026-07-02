@@ -1,6 +1,8 @@
-/akafred-skills/
 /mattpocock-skills/
 /obra-superpowers/
+
+# Private sub-repos — referenced only on the develop branch, never committed to main
+/akafred-skills/
 /akafred-prezzie/
-/kjetiljd-skills/
 /akafred-code-design-review/
+/kjetiljd-skills/
