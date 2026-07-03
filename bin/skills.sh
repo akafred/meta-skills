@@ -47,7 +47,7 @@ for proj in "${projects[@]}"; do
   [[ -d "$proj_dir" ]] || { echo "Warning: sub-repo not cloned, skipping: $proj (make update)" >&2; continue; }
   while IFS= read -r f; do
     skill_files+=("$f")
-  done < <(find "$proj_dir" -name SKILL.md -print | sort)
+  done < <(find "$proj_dir" \( -name node_modules -o -name .git \) -prune -o -name SKILL.md -print | sort)
 done
 
 if [[ ${#skill_files[@]} -eq 0 ]]; then

@@ -31,7 +31,7 @@ snapshot() {
       while IFS= read -r f; do
         rel="${f%/SKILL.md}"; rel="${rel#"$repo_root"/}"
         printf '%s\t%s\t%s\n' "$rel" "$(shasum "$f" | awk '{print $1}')" "$(name_of "$f")"
-      done < <(find "$proj_dir" -name SKILL.md -print)
+      done < <(find "$proj_dir" \( -name node_modules -o -name .git \) -prune -o -name SKILL.md -print)
     done
   } | sort > "$out"
 }
