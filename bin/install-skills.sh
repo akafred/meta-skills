@@ -206,7 +206,7 @@ for proj in "${projects[@]}"; do
     names+=("$(name_of "$skill_md")")
     sources+=("$skill_dir")
     labels+=("$(name_of "$skill_md")  ($proj)")
-  done < <(find "$proj_dir" -name SKILL.md -print | sort)
+  done < <(find "$proj_dir" \( -name node_modules -o -name .git \) -prune -o -name SKILL.md -print | sort)
 done
 
 if [[ ${#names[@]} -eq 0 ]]; then
