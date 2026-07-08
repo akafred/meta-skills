@@ -56,6 +56,20 @@ in an already-cloned sub-repo, so the new link resolves right away — don't tel
 user it will activate later. See `README.md` for the full command set and
 `make help` for the menu.
 
+## Using the plugins (Claude Code only)
+
+Some sub-repos are also **Claude Code plugins** (they have a top-level
+`.claude-plugin/`, possibly with their own marketplace). These install through
+Claude Code's plugin system, not symlinks: `make list-plugins` shows them,
+`make install-plugins` installs (needs the `claude` CLI; `TARGET=`, `SCOPE=`
+local/project/user, `SOURCE=` origin/local), `make list-installed-plugins` and
+`make uninstall-plugins` complete the set. Plugins install from their upstream
+repo by default (`SOURCE=origin`); repos without their own marketplace are served
+by a synthesized `meta-skills` marketplace generated (gitignored) at this repo's
+root. The two mechanisms coexist: a plugin repo's skills remain individually
+symlinkable via `make install-skills`, and installing the plugin is a separate,
+additional choice — don't treat one as replacing the other.
+
 ## Conventions `make help` can't show
 
 - **Adding a repo** (`make add`): name the folder `<owner>-<repo>` (e.g.
