@@ -1,6 +1,7 @@
 {
   "projects": {
     "mattpocock-skills": "https://github.com/mattpocock/skills.git",
-    "obra-superpowers": "https://github.com/obra/superpowers.git"
+    "obra-superpowers": "https://github.com/obra/superpowers.git",
+    "anthropics-skills": "https://github.com/anthropics/skills.git"
   }
 }
