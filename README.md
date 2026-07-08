@@ -8,6 +8,7 @@ Because skills are symlinked in rather than copied, it's easy to try them out an
 
 | Folder | Source |
 | --- | --- |
+| `addyosmani-agent-skills` | `https://github.com/addyosmani/agent-skills.git` |
 | `akafred-code-design-review` | `git@github.com:akafred/code-design-review.git` |
 | `akafred-prezzie` | `git@github.com:akafred/prezzie.git` |
 | `akafred-skills` | `git@github.com:akafred/skills.git` |
@@ -90,6 +91,34 @@ make uninstall-skills SKILLS=meta-repo               # remove one skill, from th
 make uninstall-skills TARGET=~/code/app SKILLS=all   # remove everything, from another repo
 ```
 
+## Install plugins (Claude Code only)
+
+Some sub-repos are also **Claude Code plugins** — beyond skills they ship slash commands, subagents, and hooks, declared in a `.claude-plugin/` directory. Plugins install through Claude Code's own plugin system (no other agent properly supports plugins), which runs alongside the skill symlinks: the same repo's skills stay individually symlinkable via `make install-skills`, and installing it as a plugin is an independent, additional option.
+
+```bash
+make list-plugins                                    # what's available, and from which marketplace
+make install-plugins                                 # interactive picker, into this meta-repo
+make install-plugins PLUGINS=superpowers TARGET=~/code/app
+make list-installed-plugins TARGET=~/code/app        # what's enabled in a repo
+make uninstall-plugins PLUGINS=all TARGET=~/code/app
+```
+
+Requires the `claude` CLI (only for install/uninstall — the two list targets work without it).
+
+### Where plugins install from (`SOURCE=`)
+
+By default (`SOURCE=origin`) plugins install from their **upstream repo** — the URL recorded in `.meta` — so they track the original source like a normal plugin install would; the local clones remain your browsing/searching catalog. `SOURCE=local` instead registers the local clone as the marketplace, so installs come from what's on your disk (useful offline, or when developing a plugin). One caveat the tooling flags at install time: a marketplace entry that itself pins a GitHub source (addyosmani's does) is fetched from GitHub even in local mode.
+
+Sub-repos that ship their own `.claude-plugin/marketplace.json` are registered as marketplaces directly. For plugin-only repos (a `plugin.json` but no marketplace), a **synthesized marketplace** named `meta-skills` is generated at this repo's root (`.claude-plugin/marketplace.json`, gitignored, regenerated on each install) so they're installable the same way. Marketplace registrations are recorded in your user settings and are never removed automatically — `make uninstall-plugins` prints the `claude plugin marketplace remove` commands if you want them gone.
+
+### Where plugins get enabled (`SCOPE=`)
+
+Plugin content is cached under `~/.claude/plugins/`; what's per-repo is the **enablement**, written to the target's settings per `SCOPE=`:
+
+- `local` (default) → `<target>/.claude/settings.local.json` — personal, typically gitignored
+- `project` → `<target>/.claude/settings.json` — committed, shared with your team
+- `user` → `~/.claude/settings.json` — enabled globally, in every repo
+
 ## Common operations
 
 `make help` lists everything; the central operations all have targets:
@@ -110,5 +139,9 @@ make uninstall-skills TARGET=~/code/app SKILLS=all   # remove everything, from a
 | `make install-skills` | Symlink skills into a repo (see above) |
 | `make list-installed` | List skills installed in a repo, and where each link points |
 | `make uninstall-skills` | Remove skill links from a repo (see above) |
+| `make list-plugins` | List Claude Code plugins across sub-repos |
+| `make install-plugins` | Install plugins via Claude Code (see above) |
+| `make list-installed-plugins` | List plugins enabled in a repo |
+| `make uninstall-plugins` | Uninstall plugins from a repo |
 
 The only operation not behind `make` is the very first clone — `meta git clone <url>` — since there is no checkout to run `make` from yet (or use plain `git clone` then `make bootstrap`). See `docs/` for cross-repo documentation.

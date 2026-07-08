@@ -23,6 +23,8 @@ add: ## Add a sub-repo: FOLDER=<owner>-<repo> URL=https://github.com/<owner>/<re
 	@n=$$(find $(FOLDER) -name SKILL.md 2>/dev/null | wc -l | tr -d ' '); \
 	  echo "✓ added '$(FOLDER)' — discovered $$n skill(s). Commit the updated .meta and .gitignore."; \
 	  [ "$$n" -gt 0 ] || echo "⚠ no SKILL.md found — check the repo's layout, then 'make list'."
+	@if [ -f "$(FOLDER)/.claude-plugin/marketplace.json" ]; then echo "ℹ ships a Claude Code plugin marketplace — see 'make list-plugins'"; \
+	  elif [ -f "$(FOLDER)/.claude-plugin/plugin.json" ]; then echo "ℹ contains a Claude Code plugin — see 'make list-plugins'"; fi
 
 status: ## Git status across all repos
 	@meta git status
@@ -59,3 +61,15 @@ install-skills: ## Install skills (interactive; SKILLS="name..." TARGET=/path/to
 
 uninstall-skills: ## Uninstall skills (interactive; SKILLS="name..."|all TARGET=/path/to/repo)
 	@bin/install-skills.sh --uninstall $(if $(TARGET),--target $(TARGET)) $(SKILLS)
+
+list-plugins: ## List Claude Code plugins across sub-repos (with their marketplaces)
+	@bin/plugins.sh list
+
+install-plugins: ## Install plugins via Claude Code (interactive; PLUGINS="name..." TARGET=/path SCOPE=local|project|user SOURCE=origin|local)
+	@bin/install-plugins.sh $(if $(TARGET),--target $(TARGET)) $(if $(SCOPE),--scope $(SCOPE)) $(if $(SOURCE),--source $(SOURCE)) $(PLUGINS)
+
+list-installed-plugins: ## List plugins enabled in a repo (TARGET=/path/to/repo; default this repo)
+	@bin/install-plugins.sh --list $(if $(TARGET),--target $(TARGET))
+
+uninstall-plugins: ## Uninstall plugins (interactive; PLUGINS="name..."|all TARGET=/path SCOPE=local|project|user)
+	@bin/install-plugins.sh --uninstall $(if $(TARGET),--target $(TARGET)) $(if $(SCOPE),--scope $(SCOPE)) $(PLUGINS)
