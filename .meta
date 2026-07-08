@@ -5,6 +5,7 @@
     "obra-superpowers": "https://github.com/obra/superpowers.git",
     "akafred-prezzie": "git@github.com:akafred/prezzie.git",
     "kjetiljd-skills": "https://github.com/kjetiljd/skills.git",
-    "akafred-code-design-review": "git@github.com:akafred/code-design-review.git"
+    "akafred-code-design-review": "git@github.com:akafred/code-design-review.git",
+    "anthropics-skills": "https://github.com/anthropics/skills.git"
   }
 }
