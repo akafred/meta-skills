@@ -14,7 +14,8 @@ bootstrap: ## Install prerequisites (meta) and clone all sub-repos
 	@meta git update
 	@echo "✓ ready. Skills committed under .claude/skills now resolve; run 'make install-skills' to add more."
 
-update: ## Update all sub-repos (clone new, pull rest) and summarize skill changes
+update: ## Update this repo first, then all sub-repos (clone new, pull rest) and summarize skill changes
+	@git pull --rebase --autostash
 	@bin/update.sh
 
 add: ## Add a sub-repo: FOLDER=<owner>-<repo> URL=https://github.com/<owner>/<repo>.git
