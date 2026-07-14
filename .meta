@@ -7,6 +7,7 @@
     "mattpocock-skills": "https://github.com/mattpocock/skills.git",
     "obra-superpowers": "https://github.com/obra/superpowers.git",
     "anthropics-skills": "https://github.com/anthropics/skills.git",
-    "addyosmani-agent-skills": "https://github.com/addyosmani/agent-skills.git"
+    "addyosmani-agent-skills": "https://github.com/addyosmani/agent-skills.git",
+    "anthropics-defending-code-reference-harness": "https://github.com/anthropics/defending-code-reference-harness.git"
   }
 }
