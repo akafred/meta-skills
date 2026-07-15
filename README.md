@@ -58,7 +58,7 @@ Conventions: the folder is named `<owner>-<repo>` (e.g. `mattpocock/skills` → 
 
 ## Install skills
 
-First explore what's available — `make list` lists every skill (name, repo, description), `make search QUERY=<text>` searches names, descriptions, and bodies across all sub-repos, `make show SKILL=<name>` pretty-prints a skill's `SKILL.md` (rendered with `glow`/`bat`/`mdcat` if installed, else plain), and `make peek SKILL=<name>` prints just a skill's frontmatter (`name`/`description`).
+First explore what's available — `make list` lists every skill (name, repo, description), `make search QUERY=<text>` searches names, descriptions, and bodies across all sub-repos with ranked, concise results (`LIMIT=all` for the full set, `SNIPPETS=0` for no body lines), `make show SKILL=<name>` pretty-prints a skill's `SKILL.md` (rendered with `glow`/`bat`/`mdcat` if installed, else plain), and `make peek SKILL=<name>` prints just a skill's frontmatter (`name`/`description`).
 
 `make install-skills` symlinks the skills you pick into a target repo, choosing skill folders for **cross-tool compatibility** (Claude Code, Copilot CLI, OpenCode, Codex). Pass `TARGET=<repo>` to install elsewhere; with no target it installs into this meta-repo itself. `SKILLS=` names one or more skills (or `all`); omit it for an interactive picker.
 
@@ -133,7 +133,7 @@ Plugin content is cached under `~/.claude/plugins/`; what's per-repo is the **en
 | `make stats` | Lines of code per repo (needs `cloc`) |
 | `make list` | List all skills across sub-repos (name, repo, description) |
 | `make list-repos` | List configured sub-repos (folder → url) |
-| `make search QUERY=..` | Search skills by name/description/body |
+| `make search QUERY=..` | Ranked skill search with concise snippets (`LIMIT=`, `SNIPPETS=`) |
 | `make show SKILL=..` | Pretty-print a skill's `SKILL.md` (name or substring) |
 | `make peek SKILL=..` | Print a skill's frontmatter only (name or substring) |
 | `make install-skills` | Symlink skills into a repo (see above) |

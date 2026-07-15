@@ -5,7 +5,7 @@ set -euo pipefail
 #
 # Usage:
 #   ./skills.sh list             # grouped by repo and category: name — description
-#   ./skills.sh search QUERY      # search name/description/body of each SKILL.md
+#   ./skills.sh search QUERY      # ranked search; LIMIT=10 and SNIPPETS=2 by default
 #   ./skills.sh show NAME         # pretty-print a skill's SKILL.md (NAME may be a substring)
 #   ./skills.sh peek NAME         # print just a skill's frontmatter (NAME may be a substring)
 #
@@ -77,6 +77,32 @@ truncate() {
   if (( ${#t} > w )); then printf '%s…' "${t:0:w-1}"; else printf '%s' "$t"; fi
 }
 
+lc() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
+contains() { [[ "$1" == *"$2"* ]]; }
+is_word() { [[ "$1" =~ ^[[:alnum:]]+$ ]]; }
+contains_token() {
+  local text term tokenized
+  text="$1"; term="$2"
+  tokenized="$(printf '%s' "$text" | tr -c '[:alnum:]' ' ' | tr -s ' ')"
+  [[ " $tokenized " == *" $term "* ]]
+}
+field_matches_query() {
+  local text="$1"
+  if is_word "$query_lc"; then contains_token "$text" "$query_lc"; else contains "$text" "$query_lc"; fi
+}
+field_matches_term() {
+  local text="$1" term="$2"
+  if is_word "$term"; then contains_token "$text" "$term"; else contains "$text" "$term"; fi
+}
+grep_skill_term() {
+  local term="$1" f="$2"
+  if is_word "$term"; then grep -inwF -- "$term" "$f"; else grep -inF -- "$term" "$f"; fi
+}
+grep_skill_term_quiet() {
+  local term="$1" f="$2"
+  if is_word "$term"; then grep -iqwF -- "$term" "$f"; else grep -iqF -- "$term" "$f"; fi
+}
+
 # Render a markdown file with the best available tool.
 render_md() {
   local f="$1"
@@ -131,6 +157,84 @@ resolve_skill() {
   printf '%s' "${matches[0]}"
 }
 
+append_match_field() {
+  local field="$1"
+  case ", $match_fields_text, " in
+    *", $field, "*) ;;
+    *) match_fields_text="${match_fields_text:+$match_fields_text, }$field" ;;
+  esac
+}
+
+body_hit_count() {
+  local f="$1" count=0 term c
+  for term in "${terms[@]}"; do
+    c="$(grep_skill_term "$term" "$f" 2>/dev/null \
+      | grep -viE '^[0-9]+:[[:space:]]*(name|description):' \
+      | wc -l | tr -d ' ' || true)"
+    count=$(( count + c ))
+  done
+  printf '%s' "$count"
+}
+
+skill_matches_query() {
+  local f="$1" term
+  if ! is_word "$query_lc" && grep -iqF -- "$query" "$f"; then return 0; fi
+  for term in "${terms[@]}"; do
+    grep_skill_term_quiet "$term" "$f" || return 1
+  done
+  return 0
+}
+
+set_skill_search_score() {
+  local f="$1" name="$2" desc="$3" loc="$4"
+  local name_lc desc_lc loc_lc score=0 term body_hits
+  name_lc="$(lc "$name")"; desc_lc="$(lc "$desc")"; loc_lc="$(lc "$loc")"
+  match_fields_text=""
+
+  if field_matches_query "$name_lc"; then score=$((score + 120)); append_match_field "name"; fi
+  if field_matches_query "$desc_lc"; then score=$((score + 80)); append_match_field "description"; fi
+  if field_matches_query "$loc_lc"; then score=$((score + 50)); append_match_field "location"; fi
+
+  for term in "${terms[@]}"; do
+    if field_matches_term "$name_lc" "$term"; then score=$((score + 30)); append_match_field "name"; fi
+    if field_matches_term "$desc_lc" "$term"; then score=$((score + 20)); append_match_field "description"; fi
+    if field_matches_term "$loc_lc" "$term"; then score=$((score + 10)); append_match_field "location"; fi
+  done
+
+  body_hits="$(body_hit_count "$f")"
+  if (( body_hits > 0 )); then
+    score=$((score + (body_hits > 8 ? 8 : body_hits) * 2))
+    append_match_field "body"
+  fi
+
+  search_score="$score"
+}
+
+print_search_snippets() {
+  local f="$1" max="$2" printed=0 seen='' pattern line line_no text width
+  (( max <= 0 )) && return
+  width=$(( cols - 10 ))
+  (( width < 20 )) && width=20
+
+  local patterns=("$query" "${terms[@]}")
+  for pattern in "${patterns[@]}"; do
+    [[ -n "$pattern" ]] || continue
+    while IFS= read -r line; do
+      line_no="${line%%:*}"
+      text="${line#*:}"
+      case " $seen " in *" $line_no "*) continue ;; esac
+      seen="$seen $line_no"
+      text="$(printf '%s' "$text" | sed 's/^[[:space:]]*//')"
+      printf '    \033[2m%s:\033[0m ' "$line_no"
+      truncate "$text" "$width"
+      printf '\n'
+      printed=$((printed + 1))
+      (( printed >= max )) && return
+    done < <(grep_skill_term "$pattern" "$f" 2>/dev/null \
+      | grep -viE '^[0-9]+:[[:space:]]*(name|description):' || true)
+  done
+}
+
 # Print the header line (name, location, relative path) for a resolved skill.
 skill_header() {
   local f="$1" fcat floc
@@ -162,20 +266,65 @@ case "$cmd" in
     ;;
   search)
     [[ -n "$query" ]] || { echo "Usage: ./skills.sh search QUERY" >&2; exit 1; }
-    hits=0
+    query_lc="$(lc "$query")"
+    terms=()
+    read -r -a terms <<< "$query_lc"
+    [[ ${#terms[@]} -gt 0 ]] || terms=("$query_lc")
+
+    limit="${LIMIT:-${SEARCH_LIMIT:-10}}"
+    snippets="${SNIPPETS:-${SEARCH_SNIPPETS:-2}}"
+    if [[ "$limit" == "all" ]]; then
+      limit=0
+    elif ! [[ "$limit" =~ ^[0-9]+$ ]] || (( limit < 1 )); then
+      echo "LIMIT must be a positive number or 'all'." >&2
+      exit 1
+    fi
+    if ! [[ "$snippets" =~ ^[0-9]+$ ]]; then
+      echo "SNIPPETS must be a number." >&2
+      exit 1
+    fi
+
+    records=()
     for f in "${skill_files[@]}"; do
-      grep -iq -- "$query" "$f" || continue
-      hits=$((hits + 1))
+      skill_matches_query "$f" || continue
       repo="$(repo_of "$f")"; cat="$(category_of "$f")"
       name="$(name_of "$f")"; desc="$(field "$f" description)"
       loc="$repo"; [[ -n "$cat" ]] && loc="$repo/$cat"
-      printf '\033[36m%s\033[0m \033[2m(%s)\033[0m ' "$name" "$loc"
-      remain=$(( cols - ${#name} - ${#loc} - 4 ))
-      [[ -n "$desc" && $remain -gt 1 ]] && truncate "$desc" "$remain"
-      printf '\n'
-      grep -in -- "$query" "$f" | grep -viE '^[0-9]+:(name|description):' | sed 's/^/    /' || true
+      set_skill_search_score "$f" "$name" "$desc" "$loc"
+      score="$search_score"
+      records+=("$(printf '%05d\t%s' "$score" "$f")")
     done
+    hits="${#records[@]}"
     [[ $hits -gt 0 ]] || { echo "No skills match: $query"; exit 1; }
+
+    shown="$hits"
+    (( limit > 0 && hits > limit )) && shown="$limit"
+    printf 'Found %s skills for "%s"; showing %s' "$hits" "$query" "$shown"
+    if (( limit > 0 && hits > limit )); then
+      printf ' (use LIMIT=%s or LIMIT=all for more)' "$((limit * 2))"
+    fi
+    printf '.\nOpen one with: make show SKILL=<name>\n\n'
+
+    i=0
+    while IFS=$'\t' read -r score f; do
+      i=$((i + 1))
+      (( limit > 0 && i > limit )) && break
+      repo="$(repo_of "$f")"; cat="$(category_of "$f")"
+      name="$(name_of "$f")"; desc="$(field "$f" description)"
+      loc="$repo"; [[ -n "$cat" ]] && loc="$repo/$cat"
+      set_skill_search_score "$f" "$name" "$desc" "$loc"
+      score="$search_score"
+
+      printf '\033[2m%2d.\033[0m \033[36m%s\033[0m \033[2m(%s)\033[0m\n' "$i" "$name" "$loc"
+      if [[ -n "$desc" ]]; then
+        printf '    '
+        truncate "$desc" "$((cols - 4))"
+        printf '\n'
+      fi
+      printf '    \033[2mmatched: %s\033[0m\n' "$match_fields_text"
+      print_search_snippets "$f" "$snippets"
+      printf '\n'
+    done < <(printf '%s\n' "${records[@]}" | sort -t $'\t' -k1,1nr -k2,2)
     ;;
   show)
     [[ -n "$query" ]] || { echo "Usage: ./skills.sh show <name-or-substring>" >&2; exit 1; }
