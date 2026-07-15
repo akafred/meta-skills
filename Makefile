@@ -40,8 +40,8 @@ list: ## List all skills across sub-repos (name, repo, description)
 list-repos: ## List configured sub-repos (folder -> url, from .meta)
 	@node -e 'const p=JSON.parse(require("fs").readFileSync(".meta","utf8")).projects; for (const [k,v] of Object.entries(p)) console.log(k+" -> "+v);'
 
-search: ## Search skills by name/description/body: make search QUERY=<text>
-	@test -n "$(QUERY)" || { echo "Usage: make search QUERY=<text>"; exit 1; }
+search: ## Search skills (ranked, concise): make search QUERY=<text> [LIMIT=10] [SNIPPETS=2]
+	@test -n "$(QUERY)" || { echo "Usage: make search QUERY=<text> [LIMIT=10] [SNIPPETS=2]"; exit 1; }
 	@bin/skills.sh search "$(QUERY)"
 
 show: ## Pretty-print a skill's SKILL.md: make show SKILL=<name-or-substring>
