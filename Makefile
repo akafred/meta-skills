@@ -14,18 +14,20 @@ bootstrap: ## Install prerequisites (meta) and clone all sub-repos
 	@meta git update
 	@echo "✓ ready. Skills committed under .claude/skills now resolve; run 'make install-skills' to add more."
 
-update: ## Update this repo first, then all sub-repos (clone new, pull rest) and summarize skill changes
+update: ## Update this repo first, then all sub-repos (clone new, pull rest), scan with Snyk, and summarize skill changes
 	@git pull --rebase --autostash
 	@bin/update.sh
+	@make snyk
 
 add: ## Add a sub-repo: FOLDER=<owner>-<repo> URL=https://github.com/<owner>/<repo>.git
 	@test -n "$(FOLDER)" && test -n "$(URL)" || { echo "Usage: make add FOLDER=<owner>-<repo> URL=https://github.com/<owner>/<repo>.git"; exit 1; }
 	@meta project import $(FOLDER) $(URL)
 	@n=$$(find $(FOLDER) -name SKILL.md 2>/dev/null | wc -l | tr -d ' '); \
-	  echo "✓ added '$(FOLDER)' — discovered $$n skill(s). Commit the updated .meta and .gitignore."; \
+	  echo "✓ added '$(FOLDER)' — discovered $$n skill(s). Running security scan..."; \
 	  [ "$$n" -gt 0 ] || echo "⚠ no SKILL.md found — check the repo's layout, then 'make list'."
 	@if [ -f "$(FOLDER)/.claude-plugin/marketplace.json" ]; then echo "ℹ ships a Claude Code plugin marketplace — see 'make list-plugins'"; \
 	  elif [ -f "$(FOLDER)/.claude-plugin/plugin.json" ]; then echo "ℹ contains a Claude Code plugin — see 'make list-plugins'"; fi
+	@make snyk
 
 status: ## Git status across all repos
 	@meta git status
@@ -35,6 +37,12 @@ pull: ## Pull all repos (parallel, rebase, autostash)
 
 stats: ## Lines of code per skill repo (needs cloc)
 	@meta exec "cloc . --vcs=git --quiet" --exclude "$(meta_project)"
+
+snyk: ## Security scan for vulnerable packages in skills and plugins
+	@command -v uvx >/dev/null 2>&1 || { echo "✗ uvx required (uv package manager) — install from https://docs.astral.sh/uv/"; exit 1; }
+	@echo "→ running Snyk agent security scan..."
+	@uvx snyk-agent-scan@latest .
+	@echo "✓ Snyk scan complete"
 
 list: ## List all skills across sub-repos (name, repo, description)
 	@bin/skills.sh list
