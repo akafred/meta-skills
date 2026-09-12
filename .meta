@@ -9,6 +9,7 @@
     "anthropics-skills": "https://github.com/anthropics/skills.git",
     "addyosmani-agent-skills": "https://github.com/addyosmani/agent-skills.git",
     "anthropics-defending-code-reference-harness": "https://github.com/anthropics/defending-code-reference-harness.git",
-    "DietrichGebert-ponytail": "https://github.com/DietrichGebert/ponytail.git"
+    "DietrichGebert-ponytail": "https://github.com/DietrichGebert/ponytail.git",
+    "wakatime-claude-code-wakatime": "https://github.com/wakatime/claude-code-wakatime.git"
   }
 }
