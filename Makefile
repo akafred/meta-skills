@@ -38,10 +38,10 @@ pull: ## Pull all repos (parallel, rebase, autostash)
 stats: ## Lines of code per skill repo (needs cloc)
 	@meta exec "cloc . --vcs=git --quiet" --exclude "$(meta_project)"
 
-snyk: ## Security scan for vulnerable packages in skills and plugins
+snyk: ## Security scan for vulnerable packages in skills and plugins (public sub-repos only)
 	@command -v uvx >/dev/null 2>&1 || { echo "✗ uvx required (uv package manager) — install from https://docs.astral.sh/uv/"; exit 1; }
 	@echo "→ running Snyk agent security scan..."
-	@uvx snyk-agent-scan@latest .
+	@bin/snyk-scan.sh
 	@echo "✓ Snyk scan complete"
 
 list: ## List all skills across sub-repos (name, repo, description)
