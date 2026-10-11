@@ -39,10 +39,16 @@ stats: ## Lines of code per skill repo (needs cloc)
 	@meta exec "cloc . --vcs=git --quiet" --exclude "$(meta_project)"
 
 snyk: ## Security scan for vulnerable packages in skills and plugins (public sub-repos only)
-	@command -v uvx >/dev/null 2>&1 || { echo "✗ uvx required (uv package manager) — install from https://docs.astral.sh/uv/"; exit 1; }
-	@echo "→ running Snyk agent security scan..."
-	@bin/snyk-scan.sh
-	@echo "✓ Snyk scan complete"
+	@if ! command -v uvx >/dev/null 2>&1; then \
+	  echo "WARNING: uvx not found, skipping the Snyk scan." >&2; \
+	  echo "         Install uv from https://docs.astral.sh/uv/" >&2; \
+	elif [ -z "$$SNYK_TOKEN" ]; then \
+	  echo "WARNING: SNYK_TOKEN is not set, skipping the Snyk scan." >&2; \
+	  echo "         Get a token at https://app.snyk.io/account and set SNYK_TOKEN." >&2; \
+	else \
+	  echo "→ running Snyk agent security scan..."; \
+	  bin/snyk-scan.sh && echo "✓ Snyk scan complete"; \
+	fi
 
 list: ## List all skills across sub-repos (name, repo, description)
 	@bin/skills.sh list
